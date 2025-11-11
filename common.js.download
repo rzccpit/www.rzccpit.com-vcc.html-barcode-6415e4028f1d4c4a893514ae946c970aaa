@@ -1,0 +1,4479 @@
+//禁止右击 F12
+		$(document).ready(function(){
+			$(document).on('contextmenu',function(e){
+				e.preventDefault();
+			})
+			$(document).on('keydown',function(e){
+				if(e.ctrlKey && e.shiftKey && e.key ==="I"){
+					e.preventDefault();
+				}
+				if(e.keyCode ==123){
+					e.preventDefault();
+				}
+			})
+		})
+
+//importStatistics()
+function importStatistics() {
+	var script = document.createElement("script");
+	script.setAttribute("type", "text/javascript");
+	script.setAttribute("async", true);
+	script.setAttribute("src", "https://statistics.smallwork.cn/script.js");
+	script.setAttribute("data-website-id", "93db1c09-303f-4b22-b689-8ebfdcaf6ea8");
+	document.getElementsByTagName('head')[0].appendChild(script)
+}
+//数字转英文 begin
+var arr1=new Array(""," thousand"," million"," billion")
+		var arr2=new Array("zero","ten","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety")
+		var arr3=new Array("zero","one","two","three","four","five","six","seven","eight","nine");
+		var arr4=new Array("ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen");
+
+		function Translate(num){
+		        var len=num.length,i,j=0,strRet="";
+		        var cols=Math.ceil(len/3);
+		        var first=len-cols*3
+		        var strRet=""
+		        for(i=first;i<len;i+=3){
+		                ++j;
+		                if(i>=0)
+		                        num3=num.substring(i,i+3)
+		                else
+		                        num3=num.substring(0,first+3)
+		                strEng=English(num3)
+		                if(strEng!=""){
+		                        if(strRet!="")        strRet+=","       
+		                        strRet+=English(num3)+arr1[cols-j]
+		                }
+		        }
+		        return strRet
+		}
+		function English(num){
+		        strRet=""
+		        if((num.length==3) && (num.substr(0,3)!="000")){
+		                if((num.substr(0,1)!="0")){
+		                        strRet+=arr3[num.substr(0,1)]+" hundred"
+		                        if(num.substr(1,2)!="00")strRet+=" and "
+		                }
+		                num=num.substring(1);
+		        }            
+		        if((num.length==2)){
+		                if((num.substr(0,1)=="0")){
+		                        num=num.substring(1)
+		                }
+		                else if((num.substr(0,1)=="1")){
+		                        strRet+=arr4[num.substr(1,2)]
+		                }
+		                else{
+		                        strRet+=arr2[num.substr(0,1)]
+		                        if(num.substr(1,1)!="0")strRet+=" "
+		                        num=num.substring(1)
+		                }
+		        }
+		        if((num.length==1) && (num.substr(0,1)!="0")){
+		                strRet+=arr3[num.substr(0,1)]
+		        }
+		        return strRet;
+		}
+//数字转英文 end
+
+function checkEnglish(obj){
+		    var str=$(obj).val();
+		    var returnstring=str.replace(/[^a-zA-Z\.\(\)\s\,\&\d\-\']/g,'');
+		 $(obj).val(returnstring);
+	}
+
+function headtitle() {
+		var head = getHeader1(5);
+		$("#topDiv").html(head);
+		//获取url
+		getEnterpriseURL1(
+			"URL_PC_Common_RefrushInfo,URL_PC_CompanyHome_QueryThreeDaysNoPay,URL_PC_CompanyHome_QueryApplyCount,URL_PC_CompanyHome_QueryApplyMonth,URL_PC_UserInfo_Select,URL_ImgPath,URL_PC_EnterpriseList_Select_List,URL_PC_VisaApply_Dayin_Shenban,URL_PC_visaApply_PrintBidChild,URL_PC_ConsularApply_PrintBidChild,URL_PC_Query_PaymentNotice"
+		);
+		getUserInfo1();
+	}
+/**************************COOKIE操作相关START**************************/
+/*
+ 添加COOKIE
+ name：名称
+ value：值
+ expiresHours：过期时间（0：代表不设定过期时间，即当浏览器关闭时cookie自动消失）
+ * */
+
+function addCookie(name, value, expiresHours) {
+	var cookieString = name + "=" + escape(value);
+	//判断是否设置过期时间
+	expiresHours = 4;
+	if(expiresHours > 0) {
+		var date = new Date();
+		date.setTime(date.getTime + expiresHours * 3600 * 1000);
+		cookieString = cookieString + "; expires=" + date.toGMTString();
+	}
+	document.cookie = cookieString + "; path=/";
+};
+
+/*
+业务列表页面选择企业
+add by syh 2021.11.29
+* */
+function initSelectCom(){
+	var formData = new FormData();
+	formData.append("loginComGuid",getCookie("userenterpriseguid"));
+	formData.append("admintype", "userpc");
+	formData.append("adminid", getCookie("enterpriseid"));
+	formData.append("adminkey", getCookie("enterprisekey"));
+	
+	commonAjax(COMMONPATH+"/api/pc/enterprise/select/selectCompanyAuth?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		for(var k = 0; k < data.body.length; k++) {
+			if(data.body[k].level=="1"){
+				$("#chooseEnterpriseGuid").append('<option value=' + data.body[k].enterprise_guid + ' selected>' + data.body[k].companyName + '</option>');
+			}else{
+				$("#chooseEnterpriseGuid").append('<option value=' + data.body[k].enterprise_guid + ' >' + data.body[k].companyName + '</option>');
+			}
+			
+		}
+	})
+}
+
+
+
+var tempindexttt;
+/*
+打开遮罩
+* */
+function openZhezhao(){
+	tempindexttt = layer.msg('请稍后...', {
+		icon: 4,
+		time: 2000000,
+		shade: 0.3,
+		isOutAnim: false
+	});
+}
+
+function closeZhezhao(){
+	layer.close(tempindexttt);
+}
+
+
+/**
+ * 检查是否有权限 
+ */
+function checkNoAuthority(data) {
+	// 判断是否非法访问
+	if(data != null && data && data.key == "ILLEGAL_ACCESSES") {
+		window.location.href = "bind.html";
+		return false;
+	} else {
+		return true;
+	}
+
+}
+
+/*
+ 获取对应名称的COOKIE
+ * */
+function getCookie(name) {
+	var strCookie = document.cookie;
+	var arrCookie = strCookie.split("; ");
+	for(var i = 0; i < arrCookie.length; i++) {
+		var arr = arrCookie[i].split("=");
+		if(arr[0] == name)
+			return unescape(arr[1]);
+	}
+	return "";
+};
+/**************************COOKIE操作相关END**************************/
+
+/**************************页面操作相关START**************************/
+/*
+ *弹出页面
+ * tittle：标题
+ * content：内容页url
+ * id:数据id
+ * width:宽度
+ * height：高度
+ */
+function pageOpen(tittle, content, id, width, height) {
+	if(id == null || id == undefined) {
+		id = 0;
+	}
+	layer.open({
+		type: 2,
+		title: tittle,
+		area: [width, height],
+		shift: 0,
+		maxmin: false,
+		skin: 'layui-layer-rim', //加上边框
+		content: content + "?timestamp=" + new Date().getTime() + "&id=" + id
+	});
+}
+
+/*
+ *弹出页面(无关闭按钮)
+ * tittle：标题
+ * content：内容页url
+ * id:数据id
+ * width:宽度
+ * height：高度
+ */
+function pageOpenNoCloseBtn(tittle, content, id, width, height) {
+	if(id == null || id == undefined) {
+		id = 0;
+	}
+	layer.open({
+		type: 2,
+		title: tittle,
+		area: [width, height],
+		shift: 0,
+		maxmin: false,
+		skin: 'layui-layer-rim', //加上边框
+		closeBtn:0,
+		content: content + "?timestamp=" + new Date().getTime() + "&id=" + id
+	});
+}
+
+
+/*
+ *弹出页面（父页面）
+ * tittle：标题
+ * content：内容页url
+ * id:数据id
+ * width:宽度
+ * height：高度
+ */
+function pageOpenByParent(tittle, content, id, width, height) {
+	if(id == null || id == undefined) {
+		id = 0;
+	}
+	parent.layer.open({
+		type: 2,
+		title: tittle,
+		area: [width, height],
+		shift: 0,
+		fix: false, //不固定
+		maxmin: false,
+		skin: 'layui-layer-rim', //加上边框
+		content: content + "?timestamp=" + new Date().getTime() + "&id=" + id
+	});
+}
+
+/*
+ *弹出页面（父页面）只有关闭按钮
+ * tittle：标题
+ * content：内容页url
+ * id:数据id
+ * width:宽度
+ * height：高度
+ */
+function pageOpenByParentnotitle(tittle, content, id, width, height) {
+	if(id == null || id == undefined) {
+		id = 0;
+	}
+	parent.layer.open({
+		type: 2,
+		title: "",
+		area: [width, height],
+		shift: 0,
+		fix: false, //不固定
+		maxmin: false,
+		skin: 'layui-layer-rim', //加上边框
+		content: content + "?timestamp=" + new Date().getTime() + "&id=" + id
+	});
+}
+
+/*
+ *弹出页面（top）只有关闭按钮
+ * tittle：标题
+ * content：内容页url
+ * id:数据id
+ * width:宽度
+ * height：高度
+ */
+function pageOpenByParentnotitleTop(tittle, content, id, width, height) {
+	if(id == null || id == undefined) {
+		id = 0;
+	}
+	top.layer.open({
+		type: 2,
+		title: "",
+		area: [width, height],
+		shift: 0,
+		fix: false, //不固定
+		maxmin: false,
+		skin: 'layui-layer-rim', //加上边框
+		content: content + "?timestamp=" + new Date().getTime() + "&id=" + id
+	});
+}
+
+/* 直接关闭弹出框
+ */
+function closePop() {
+	// 获取当前页面引索
+	var indexmain = parent.layer.getFrameIndex(window.name); //获取窗口索引
+	// 关闭当前页面
+	parent.layer.close(indexmain);
+}
+
+/**
+ * 关闭Pop页面并且刷新主页面
+ *
+ * @param {Object}
+ *            title 提示信息
+ */
+function saveAndClosePopAndRefreshParent(title) {
+	// 提示保存成功
+	parent.layer.alert(title || '保存成功！', {
+		icon: 1,
+		closeBtn: 0
+	}, function(index) {
+		// 关闭保存成功页面
+		parent.layer.close(index);
+		// 获取当前页面引索
+		var indexmain = parent.layer.getFrameIndex(window.name); // 获取窗口索引
+		// 触发主页面按钮事件,根据不同业务可以在自己页面修改该方法
+		if(parent.getData && typeof(parent.getData) == "function") parent.getData();
+		// 关闭当前页面
+		parent.layer.close(indexmain);
+	});
+}
+
+/**************************页面操作相关END**************************/
+
+/**************************页面提示相关START**************************/
+
+// 出错信息
+function layer_msg(str) {
+	layer.msg(str, function() {}, {
+		time: 4
+	});
+}
+
+/* 弹出成功信息
+ */
+function alertSuccess(str) {
+	// 弹出提示框
+	layer.alert(str, {
+		icon: 1
+	});
+}
+
+/* 弹出全局成功信息
+ */
+function alertParentSuccess(str) {
+	// 弹出提示框
+	parent.layer.alert(str, {
+		icon: 1
+	});
+}
+/* 弹出警告信息
+ * str：警告信息
+ */
+function alertWarning(str) {
+	// 弹出提示框
+	layer.alert(str, {
+		icon: 5
+	});
+}
+/* 弹出全局警告信息
+ */
+function alertParentWarning(str) {
+	// 弹出提示框
+	parent.layer.alert(str, {
+		icon: 5
+	});
+}
+
+/* 弹出失败信息
+ */
+function alertError(str) {
+	// 弹出提示框
+	layer.alert(str, {
+		icon: 2
+	});
+}
+/* 弹出全局失败信息
+ */
+function alertParentError(str) {
+	// 弹出提示框
+	parent.layer.alert(str, {
+		icon: 2
+	});
+}
+
+/* 确认删除
+ * id:删除id
+ * title：删除标题
+ * content：删除提醒内容
+ */
+function deleteAndConfirm(id, title, content) {
+	// 弹出提示框
+	layer.confirm(content || '您确定要删除这些信息吗?', {
+		icon: 3,
+		title: title || '删除'
+	}, function(index) {
+		deleteData(id);
+		// 关闭提示框
+		layer.close(index);
+	});
+}
+
+function saveSuccess(title) {
+	// 提示保存成功
+	layer.alert(title || '保存成功！', {
+		icon: 1,
+		closeBtn: 0
+	}, function(index) {
+		// 关闭保存成功页面
+		//layer.close(index);
+		location.refresh();
+	});
+}
+
+function alertAndReload(title,icon,functionc){
+layer.alert(title, { icon: 1, closeBtn: 0 }, functionc);
+}
+/**************************页面提示相关END**************************/
+
+/**************************判断为空等状态START**************************/
+
+/*提示不能为空
+ *    name:元素名称
+ *tip: 提示内容
+
+ */
+function showNotEmpty(name, tip) {
+	if($("#" + name).val().toString().trim() == "") {
+		layer.tips(tip || '该项目不能为空！', '#' + name, {
+			tipsMore: true,
+			tips: 3
+		});
+		$('#' + name).focus();
+		return true;
+	} else {
+		return false;
+	}
+}
+/*提示不能为空
+ *    name:元素名称
+ *tip: 提示内容
+ */
+function showErrorFormat(name, tip) {
+	layer.tips(tip || '该项目格式不正确！', '#' + name, {
+		tipsMore: true,
+		tips: 3
+	});
+}
+
+/*
+两值相比较
+*_val1:比较值1
+*_val2:默认值2
+*tip:提示内容
+*/
+function showNotEmptyWithDDL(_val1, _val2, name, tip) {
+
+	if(_val1 == _val2) {
+		layer.tips(tip, '#' + name, {
+			tipsMore: true,
+			tips: 3
+		});
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**************************判断为空等状态END**************************/
+
+/**************************日期相关操作START**************************/
+/******************************************
+ ** 格式化日期
+ ** new Date().Format("yyyy-MM-dd")
+ ** new Date().Format("yyyy-MM-dd hh:mm:ss")
+ ******************************************/
+Date.prototype.Format = function(fmt) {
+	var o = {
+		"M+": this.getMonth() + 1, //月份
+		"d+": this.getDate(), //日
+		"h+": this.getHours(), //小时
+		"m+": this.getMinutes(), //分
+		"s+": this.getSeconds(), //秒
+		"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+		"S": this.getMilliseconds() //毫秒
+	};
+	if(/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+	for(var k in o)
+		if(new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+	return fmt;
+};
+/**
+ * 时分比较大小，有秒忽略
+ * param value1 格式 hh:mm 或 hh:mm:ss
+ * param value2 格式 hh:mm 或 hh:mm:ss
+ * return -1:value1<value2 0:value1=value2 1:value1>value2
+ */
+function compareHoursAndMinutes(value1, value2) {
+	var reg = /^([01][0-9]|2[0-3])(:[0-5][0-9]){1,2}$/;
+	var re = new RegExp(reg);
+	if(!re.test(value1) || !re.test(value2)) {
+		//layer.msg('时分秒格式不正确');
+		return 'error';
+	}
+	var time1 = value1.split(":");
+	var time2 = value2.split(":");
+	// 小时比较
+	if(parseInt(time1[0]) < parseInt(time2[0])) {
+		return -1;
+	} else if(parseInt(time1[0]) == parseInt(time2[0])) {
+		// 分钟比较
+		if(parseInt(time1[1]) < parseInt(time2[1])) {
+			return -1;
+		} else if(parseInt(time1[1]) == parseInt(time2[1])) {
+			return 0;
+		} else {
+			return 1;
+		}
+	} else {
+		return 1;
+	}
+};
+
+/**
+ * 年月日时分比较大小，有秒忽略
+ * param value1 格式 yyyy-MM-dd hh:mm 或 yyyy-MM-dd hh:mm:ss
+ * param value2 格式 yyyy-MM-dd hh:mm 或 yyyy-MM-dd hh:mm:ss
+ * return -1:value1<value2 0:value1=value2 1:value1>value2
+ */
+function compareFormatTime(value1, value2) {
+	var reg = /^\d{4}-(0\d|1[0-2])-([0-2]\d|3[01])( ([01]\d|2[0-3])\:[0-5]\d\:[0-5]\d)$/;
+	var re = new RegExp(reg);
+	if(!re.test(value1) || !re.test(value2)) {
+		//layer.msg('时间格式不正确');
+		return 'error';
+	}
+	var time1 = value1.substr(0, 10).split("-");
+	var time2 = value2.substr(0, 10).split("-");
+	// 年份比较
+	if(parseInt(time1[0]) < parseInt(time2[0])) {
+		return -1;
+	} else if(parseInt(time1[0]) == parseInt(time2[0])) {
+		// 月份比较
+		if(parseInt(time1[1]) < parseInt(time2[1])) {
+			return -1;
+		} else if(parseInt(time1[1]) == parseInt(time2[1])) {
+			// 日期比较
+			if(parseInt(time1[2]) < parseInt(time2[2])) {
+				return -1;
+			} else if(parseInt(time1[2]) == parseInt(time2[2])) {
+				// 时间比较
+				return compareHoursAndMinutes(value1.substr(11, 10), value2.substr(11, 10))
+			} else {
+				return 1;
+			}
+		} else {
+			return 1;
+		}
+	} else {
+		return 1;
+	}
+};
+/*
+ * 判断是否闰平年
+ * 
+ */
+function IsPinYear(year) {
+	return(0 == year % 4 && (year % 100 != 0 || year % 400 == 0));
+}
+/* 
+ * 日期加减
+ * date：日期
+ * days：天数
+ */
+function addDate(date, days) {
+	var d = new Date(date);
+	d.setDate(d.getDate() + parseInt(days));
+	var month = d.getMonth() + 1;
+	var day = d.getDate();
+	if(month < 10) {
+		month = "0" + month;
+	}
+	if(day < 10) {
+		day = "0" + day;
+	}
+	var val = d.getFullYear() + "-" + month + "-" + day;
+	return val;
+}
+
+/*
+ * 月份加减
+ * date：日期
+ * months：月数 
+ */
+function addMonth(date, months) {
+	var d = new Date(date);
+	d.setMonth(d.getMonth() + parseInt(months));
+	var month = d.getMonth() + 1;
+	var day = d.getDate();
+	if(month < 10) {
+		month = "0" + month;
+	}
+	if(day < 10) {
+		day = "0" + day;
+	}
+	var val = d.getFullYear() + "-" + month + "-" + day;
+	return val;
+}
+
+/**************************日期相关操作END**************************/
+
+/**************************金额相关操作START**************************/
+/*
+ * 金钱正则表达式
+ * elem：元素id
+ * integerlength：整数长度
+ * decimallength：小数长度
+ */
+//function checkPrice(elem, integerlength, decimallength) {
+//	if(!integerlength) integerlength = 6;
+//	if(!decimallength) decimallength = 2;
+//	var reg = /^(\d{0,/ + integerlength + /})(\.\d{1,/ + decimallength + /})?$/;
+//	var re = new RegExp(reg);
+//	var value = $("#" + elem).val();
+//	if(!re.test(value)) {
+//		layer.tips('金额格式不正确！', "#" + elem, {
+//			tipsMore: true,
+//			tips: 3
+//		});
+//		$("#" + elem).focus();
+//	}
+//	return re.test(value);
+//}
+/**
+ * 录入完成后，输入模式失去焦点后对录入进行判断并强制更改，并对小数点进行0补全
+ * arg1 inputObject
+ * 这个函数写得很傻，是我很早以前写的了，没有进行优化，但功能十分齐全，你尝试着使用
+ * 其实有一种可以更快速的JavaScript内置函数可以提取杂乱数据中的数字：
+ * parseFloat('10');
+ **/
+function moneyBlur(th) {
+	var v = th.value;
+	if(v === '') {
+		v = '0.00';
+	} else if(v === '0') {
+		v = '0.00';
+	} else if(v === '0.') {
+		v = '0.00';
+	} else if(/^0+\d+\.?\d*.*$/.test(v)) {
+		v = v.replace(/^0+(\d+\.?\d*).*$/, '$1');
+		v = inp.getRightPriceFormat(v).val;
+	} else if(/^0\.\d$/.test(v)) {
+		v = v + '0';
+	} else if(!/^\d+\.\d{2}$/.test(v)) {
+		if(/^\d+\.\d{2}.+/.test(v)) {
+			v = v.replace(/^(\d+\.\d{2}).*$/, '$1');
+		} else if(/^\d+$/.test(v)) {
+			v = v + '.00';
+		} else if(/^\d+\.$/.test(v)) {
+			v = v + '00';
+		} else if(/^\d+\.\d$/.test(v)) {
+			v = v + '0';
+		} else if(/^[^\d]+\d+\.?\d*$/.test(v)) {
+			v = v.replace(/^[^\d]+(\d+\.?\d*)$/, '$1');
+		} else if(/\d+/.test(v)) {
+			v = v.replace(/^[^\d]*(\d+\.?\d*).*$/, '$1');
+			ty = false;
+		} else if(/^0+\d+\.?\d*$/.test(v)) {
+			v = v.replace(/^0+(\d+\.?\d*)$/, '$1');
+			ty = false;
+		} else {
+			v = '0.00';
+		}
+	}
+	th.value = v;
+}
+/**
+ * 格式化折扣
+ * arg1 inputObject
+ **/
+function discountKeyUp(th) {
+	if(th.value.length == 1 && th.value != "0") {
+		th.value = 0;
+	}
+
+	var regStrs = [
+		['^0(\\d+)$', '$1'], //禁止录入整数部分两位以上，但首位为0
+		['[^\\d\\.]+$', ''], //禁止录入任何非数字和点
+		['\\.(\\d?)\\.+', '.$1'], //禁止录入两个以上的点
+		['^(\\d+\\.\\d{2}).+', '$1'] //禁止录入小数点后两位以上
+	];
+	for(i = 0; i < regStrs.length; i++) {
+		var reg = new RegExp(regStrs[i][0]);
+		th.value = th.value.replace(reg, regStrs[i][1]);
+	}
+}
+
+/**************************金额相关操作END**************************/
+/**************************数字相关操作START**************************/
+// 判断是否为数字和第一位不能为小数点,可用于文本框上
+function checkDecimal(_val) {
+	var proportion = _val;
+	if(proportion.value != "") {
+		proportion.value = proportion.value.replace(/[^\d\.]/g, '');
+		if(proportion.value.slice(0, 1) == '.') {
+			proportion.value = "";
+			return false;
+		}
+	}
+	return true;
+}
+/*
+ * onkeydown事件:只能输入数字
+ */
+function onlyNum() {
+	var event = (event) ? event : window.event;
+	var kc = event.keyCode || event.charCode;
+	// 48到57~96到105数字，8退格键，46delete键,37左移，39右移,9 tab键
+	if(!((kc >= 48 && kc <= 57) || (kc >= 96 && kc <= 105) || kc == 8 || kc == 46 || kc == 37 || kc == 39 || kc == 9)) {
+		kc = 0;
+		event.returnValue = false;
+		return false;
+	}
+}
+/*
+ * onkeydown事件:只能输入浮点数字
+ */
+function onlyFloat() {
+	var event = (event) ? event : window.event;
+	var kc = event.keyCode || event.charCode;
+	// 48到57~96到105数字，8退格键，46delete键,37左移，39右移 110和190小数点,9 tab键
+	if(!((kc >= 48 && kc <= 57) || (kc >= 96 && kc <= 105) || kc == 8 || kc == 46 || kc == 37 || kc == 39 || kc == 110 || kc == 190 || kc == 9 || kc == 17 || kc == 86)) {
+		kc = 0;
+		event.returnValue = false;
+		return false;
+	}
+}
+
+/**
+ * 排序字段用，验证只能输入0-9的数字
+ *
+ * @param {Object}
+ *            obj
+ */
+function isNum(obj) {
+	var flag = false;
+	// 只能输入0-9的数字
+	var reg = /^[0-9]*$/;
+	if(!reg.test(obj)) {
+		flag = true;
+	}
+	return flag;
+};
+/**
+ * 正浮点数
+ *
+ * @param {Object}
+ *            obj
+ */
+function isDecimal(obj) {
+	var flag = false;
+	// 正浮点数
+	var reg = /^\d+(\.\d+)?$/;
+	if(!reg.test(obj)) {
+		flag = true;
+	}
+	return flag;
+};
+//数字、.(dot)以外过滤(onKeyPress调用)
+function checkNumDot() {
+	if((event.keyCode != 46) && // .之外
+		(event.keyCode < 48 || event.keyCode > 57)) // 0-9之外
+	{
+		event.keyCode = 0;
+		event.returnValue = false;
+	}
+}
+/**
+ * 格式化数字 th inputObject
+ */
+function intKeyUp(th) {
+	var regStrs = [
+		['[^\\d\\.]+$', ''] // 禁止录入任何非数字和点
+	];
+	for(i = 0; i < regStrs.length; i++) {
+		var reg = new RegExp(regStrs[i][0]);
+		th.value = th.value.replace(reg, regStrs[i][1]);
+	}
+}
+/**
+ * 格式化金额 arg1 inputObject
+ */
+function moneyKeyUp(th) {
+	var regStrs = [
+		['^0(\\d+)$', '$1'], // 禁止录入整数部分两位以上，但首位为0
+		['[^\\d\\.]+$', ''], // 禁止录入任何非数字和点
+		['\\.(\\d?)\\.+', '.$1'], // 禁止录入两个以上的点
+		['^(\\d+\\.\\d{2}).+', '$1'] // 禁止录入小数点后两位以上
+	];
+	for(i = 0; i < regStrs.length; i++) {
+		var reg = new RegExp(regStrs[i][0]);
+		th.value = th.value.replace(reg, regStrs[i][1]);
+	}
+}
+
+/**************************数字相关操作END**************************/
+
+/**************************共通操作START**************************/
+
+/**
+ * js全部置换
+ * @param {Object} s1
+ * @param {Object} s2
+ */
+String.prototype.replaceAll = function(s1, s2) {
+	return this.replace(new RegExp(s1, "gm"), s2);
+}
+
+/*
+ *初始化checkbox只能单个选中
+ */
+function initCheckbox() {
+	$('form').find('input[type=checkbox]').bind('click', function() {
+
+		$('form').find('input[type=checkbox]').not(this).attr("checked", false);
+
+	});
+}
+
+/*
+ * 获取浏览器地址栏id
+ */
+function GetQueryString(name) {
+	var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+	var r = window.location.search.substr(1).match(reg);
+	if(r != null) return decodeURIComponent(r[2]);
+	return null;
+}
+
+//处理键盘事件
+//禁止后退键（Backspace）密码或单行、多行文本框除外
+
+function banBackSpace(e) {
+	var ev = e || window.event; //获取event对象
+	var obj = ev.target || ev.srcElement; //获取事件源
+	var t = obj.type || obj.getAttribute('type'); //获取事件源类型
+	//获取作为判断条件的事件类型
+	var vReadOnly = obj.readOnly;
+	var vDisabled = obj.disabled;
+	//处理undefined值情况
+	vReadOnly = (vReadOnly == undefined) ? false : vReadOnly;
+	vDisabled = (vDisabled == undefined) ? true : vDisabled;
+	//当敲Backspace键时，事件源类型为密码或单行、多行文本的，
+	//并且readOnly属性为true或disabled属性为true的，则退格键失效
+	var flag1 = ev.keyCode == 8 && (t == "password" || t == "text" || t == "textarea" || t == "number") && (vReadOnly == true || vDisabled == true);
+	//当敲Backspace键时，事件源类型非密码或单行、多行文本的，则退格键失效
+	var flag2 = ev.keyCode == 8 && t != "password" && t != "text" && t != "textarea" && t != "number";
+	//判断
+	if(flag2 || flag1)
+		return false;
+}
+
+//禁止退格键
+//作用于Firefox、Opera
+document.onkeypress = banBackSpace;
+
+//禁止退格键
+//作用于IE、Chrome
+document.onkeydown = banBackSpace;
+
+function doKey(e) { //处理键盘事件jiangkun
+	var ev = e || window.event; //获取event对象
+	var obj = ev.target || ev.srcElement; //获取事件源
+	var t = obj.type || obj.getAttribute('type'); //获取事件源类型
+	var condition = false;
+	if(obj.getAttribute('readonly') == 'readonly' || obj.getAttribute('readonly') == true) {
+		condition = (ev.keyCode == 8);
+	}
+	if(condition) {
+		return false;
+	}
+}
+
+/**
+ * 获取图片路径
+ */
+function createObjectURL(blob) {
+	if(window.URL) {
+		return window.URL.createObjectURL(blob);
+	} else if(window.webkitURL) {
+		return window.webkitURL.createObjectURL(blob);
+	} else {
+		return null;
+	}
+};
+
+function stopDefault(e) {
+	//如果提供了事件对象，则这是一个非IE浏览器
+	if(e && e.preventDefault) {
+		//阻止默认浏览器动作(W3C)
+		e.preventDefault();
+	} else {
+		//IE中阻止函数器默认动作的方式
+		window.event.returnValue = false;
+	}
+	return false;
+}
+
+/*
+ * 判断textArea输入的字符
+ * oInObj:元素id
+ * length：长度
+ */
+function checkTextareaLength(oInObj, length) {
+	var iCurLen = oInObj.value.length;
+
+	if(oInObj != null && iCurLen > length) {
+		oInObj.value = oInObj.value.substring(0, length);
+		return false;
+	}
+}
+
+/**
+ *创建上传通道
+ */
+function createXHR() {
+	if(typeof XMLHttpRequest != "undefined") {
+		return new XMLHttpRequest();
+	} else if(typeof ActiveXObject != "undefined") {
+		if(typeof arguments.callee.activeXString != "string") {
+			var versions = ["MSXML2.XMLHttp.6.0", "MSXML2.XMLHttp.3.0",
+				"MSXML2.XMLHttp"
+			];
+			for(var i = 0, len = versions.length; i < len; i++) {
+				try {
+					var xhr = new ActiveXObject(versions[i]);
+					arguments.callee.activeXString = versions[i];
+					return xhr;
+				} catch(ex) {
+					//跳过
+				}
+			}
+		}
+		return new ActiveXObject(arguments.callee.activeXString);
+	} else {
+		throw new Error("NO XHR object available.")
+	}
+};
+/**************************共通操作END**************************/
+
+/**************************LOG操作Start**************************/
+/*
+ * 写入log
+ * str：字符串或者json对象
+ */
+function log(str) {
+	//	if(typeof(str) == "string") {
+	//		console.log(window.location.pathname + " log(String): " + str);
+	//	} else {
+	//		console.log(window.location.pathname + " log(JSON): " + JSON.stringify(str));
+	//	}
+}
+/**************************共通操作END**************************/
+
+/**************************基础参数START**************************/
+// 显示页数
+var pageIndex = 1;
+// 每页大小
+var pageSize = 20;
+// layui使用全局参数
+var layer, form, element, laydate, laypage, laytpl, table, layedit;
+
+/**************************基础参数END**************************/
+
+/**
+ * 设置默认打印机，报表直接打印
+ * @param printValue
+ */
+function DepositPrint(printValue, FileValue) {
+
+	var ie = isIE();
+
+	if(!ie) {
+		layer_msg("请使用IE浏览器打印！");
+		return;
+	}
+	var ParaName, ParaValue;
+	try {
+		var ObjPrintMange = new ActiveXObject('WebPrint.WebPrintUnit');
+	} catch(e) {
+		if(confirm('打印控件未安装，现在下载吗?')) {
+			window.location = '../PrintActivex.exe';
+		}
+		return;
+	}
+
+	var OldVersion = ObjPrintMange.Version;
+	NewVerion = '5.0(2011-08-01)';
+	if(OldVersion < NewVerion) {
+		ObjPrintMange = null;
+		alert('打印控件需升级。请先进行下载，下载后关闭IE，然后安装升级版。');
+		window.location = '../PrintActivex.exe';
+		return;
+	}
+	ObjPrintMange.CheckReg('朱志炎', 'F7F83570BAF3756CE17A6E3E4FA65BBB');
+	ObjPrintMange.LeftMargin = 0;
+	ObjPrintMange.RightMargin = 0;
+	ObjPrintMange.TopMargin = 0;
+	ObjPrintMange.BottomMargin = 0;
+	ObjPrintMange.PrintReport(FileValue, '', '', printValue, '', '', '', '', '');
+	//				ObjPrintMange.DesignReport(FileValue, '', '', printValue, '', '', '', '', '');
+	ObjPrintMange = null;
+}
+
+function isIE() { //ie?
+	if(!!window.ActiveXObject || "ActiveXObject" in window)
+		return true;
+	else
+		return false;
+}
+
+//转意符换成普通字符
+function escape2Html(str) {
+	var arrEntities = {
+		'lt': '<',
+		'gt': '>',
+		'nbsp': ' ',
+		'amp': '&',
+		'quot': '"'
+	};
+	return str.replace(/&(lt|gt|nbsp|amp|quot);/ig, function(all, t) {
+		return arrEntities[t];
+	});
+}
+
+// 登入验证码
+var _loginCode;
+
+function createCode() {
+	_loginCode = "";
+	var codeLength = 4; //验证码的长度
+	var checkCode = document.getElementById("checkCode");
+	var codeChars = new Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '$', 'j', 'k', '@', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', '!', 'J', 'K', '#', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'); //所有候选组成验证码的字符，当然也可以用中文的
+	for(var i = 0; i < codeLength; i++) {
+		var charNum = Math.floor(Math.random() * 52);
+		_loginCode += codeChars[charNum];
+	}
+	if(checkCode) {
+		checkCode.className = "code";
+		checkCode.innerHTML = _loginCode;
+	}
+}
+
+/*
+ * 下载文件
+ * url：文件路径
+ * name：下载后文件名
+ */
+function downloadFile(url, name) {
+	if(!name) name = new Date().getTime();
+
+	if(isIE()) {
+		window.open(url, "_blank");
+	} else {
+
+		var temp = document.createElement("a");
+		if($("#downPdf").length == 0) {
+			$("body").append('<a download="" href="" target="_blank" id="downPdf" style="display:none"></a> ');
+		}
+
+		var a = document.getElementById("downPdf");
+		a.href = url;
+		a.download = name;
+		a.click();
+
+	}
+
+}
+
+// 分页
+function createPage(totalCount) {
+
+	laypage.render({
+		elem: 'page',
+		count: totalCount,
+		limit: pageSize,
+		limits: [4,10, 20, 50, 100],
+		layout: ['count', 'limit', 'prev', 'page', 'next', 'skip'],
+		curr: pageIndex || 1,
+		prev: '<i class="layui-icon">&#xe603;</i>',
+		next: '<i class="layui-icon">&#xe602;</i>',
+		first: "首页",
+		last: "尾页",
+		skip: true,
+		jump: function(obj, first) {
+			if(!first) {
+				// obj.curr 点击页数
+				pageIndex = obj.curr;
+				// obj.limit 每页条数
+				pageSize = obj.limit;
+				// 获取数据
+				getData();
+			}
+		}
+	});
+
+}
+
+// 分页
+function createPageCompany(totalCount, pageSize) {
+
+	laypage.render({
+		elem: 'page',
+		count: totalCount,
+		limit: pageSize,
+		layout: ['count', 'prev', 'page', 'next', 'skip'],
+		curr: pageIndex || 1,
+		prev: '<i class="layui-icon">&#xe603;</i>',
+		next: '<i class="layui-icon">&#xe602;</i>',
+		first: "首页",
+		last: "尾页",
+		skip: true,
+		jump: function(obj, first) {
+			if(!first) {
+				// obj.curr 点击页数
+				pageIndex = obj.curr;
+				// obj.limit 每页条数
+				pageSize = obj.limit;
+				// 获取数据
+				getData();
+			}
+		}
+	});
+
+}
+
+/**
+ * 其他分页（有多个分页存在时使用）
+ * @param {Object} totalCount 总条数
+ * @param {Object} pageid 分页id
+ * @param {Object} callback 回调
+ */
+function createPageOther(totalCount, pageid, callback) {
+
+	laypage.render({
+		elem: pageid,
+		count: totalCount,
+		limit: 20,
+		layout: ['prev', 'page', 'next', 'skip', 'count'],
+		curr: pageIndex || 1,
+		prev: '<i class="layui-icon">&#xe603;</i>',
+		next: '<i class="layui-icon">&#xe602;</i>',
+		first: "首页",
+		last: "尾页",
+		skip: true,
+		jump: function(obj, first) {
+			if(!first) {
+				// obj.curr 点击页数
+				pageIndex = obj.curr;
+				// 获取数据
+				if(callback && typeof(callback) == 'function') callback();
+			}
+		}
+	});
+
+}
+
+// 验证失败提示
+function validateTips(_obj) {
+	var flg = false;
+	if(_obj.key) {
+		flg = true;
+	} else {
+		layer.tips(_obj.msg, _obj.object, {
+			tipsMore: true,
+			tips: 3
+		});
+		$(_obj.object).focus();
+	}
+	return flg;
+}
+
+/**
+ * 数字前面补0
+ * @param {Object} num 传入的数字
+ * @param {Object} n 需要的字符串长度
+ */
+function PrefixInteger(num, n) {
+	return(Array(n).join(0) + num).slice(-n);
+}
+
+/**
+ * 检查Decimal是否符合要求 （Decimal(alllength,sublength)）
+ *
+ * @param {Object}
+ *            itemObj 组件对象
+ * @param {Object}
+ *            alllength 总长度
+ * @param {Object}
+ *            sublength 小数长度
+ */
+function checkDecimalFullObj(itemObj, alllength, sublength) {
+	var value = $(itemObj).val().toString().trim();
+	// 判断是否为空
+	if(value == null || value == undefined || value == "") {
+		layer_msg("请输入数字!");
+		$(itemObj).focus();
+		return false;
+	}
+
+	// 判断是否是数字
+	var renumber = /^[0-9]+.?[0-9]*$/; // 判断字符串是否为数字 //判断正整数 /^[1-9]+[0-9]*]*$/
+	if(!renumber.test(value)) {
+		layer_msg("格式不正确,请输入数字!");
+		$(itemObj).focus();
+		return false;
+	}
+
+	// 判断整数长度
+	var tempvalue = value.split(".");
+	if(tempvalue[0] && tempvalue[0].length > (alllength - sublength)) {
+		layer_msg("整数位过长,长度不能超过" + (alllength - sublength) + "位!");
+		$(itemObj).focus();
+		return false;
+	}
+
+	if(tempvalue.length > 1 && tempvalue[1].length > sublength) {
+		layer_msg("小数位过长,长度不能超过" + sublength + "位!");
+		$(itemObj).focus();
+		return false;
+	}
+	return true;
+}
+
+// 异地登入
+function errorLogin(XMLHttpRequest, textStatus, errorThrown) {
+	if(XMLHttpRequest.readyState == 4 && XMLHttpRequest.status == 200 && XMLHttpRequest.responseText == "") {
+		goLogin("ajaxerror");
+	} else {
+		alertError("系统连接失败，请确保互联网访问正常！");
+	}
+}
+
+// 检查是否有权限
+function checkLogin() {
+	var loginkey = getCookie("adminkey");
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		goLogin("keyerror");
+	}
+}
+
+// 月份转英文
+function monthToEng(month) {
+	var monthEng = "";
+	if(month == 1) {
+		monthEng = "Jan";
+	} else if(month == 2) {
+		monthEng = "Feb";
+	} else if(month == 3) {
+		monthEng = "Mar";
+	} else if(month == 4) {
+		monthEng = "Apr";
+	} else if(month == 5) {
+		monthEng = "May";
+	} else if(month == 6) {
+		monthEng = "Jun";
+	} else if(month == 7) {
+		monthEng = "Jul";
+	} else if(month == 8) {
+		monthEng = "Aug";
+	} else if(month == 9) {
+		monthEng = "Sep";
+	} else if(month == 10) {
+		monthEng = "Oct";
+	} else if(month == 11) {
+		monthEng = "Nov";
+	} else if(month == 12) {
+		monthEng = "Dec";
+	}
+
+	return monthEng;
+}
+
+/**
+ * 检查是否有错误
+ */
+function checkError(data) {
+
+	// 判断参数是否错误
+	if(data != null && data && data.key == "PARAMETER_ERROR") {
+		alertError(data.msg);
+		return true;
+	}
+
+	// 判断是否有请求权限
+	if(data != null && data && data.key == "NO_AUTHORITY") {
+		alertError(data.msg);
+		return true;
+	}
+
+	// 判断是否非法访问
+	if(data != null && data && data.key == "ILLEGAL_ACCESSES") {
+		goLogin("ILLEGAL_ACCESSES");
+		return true;
+	}
+
+	// 判断服务是否已到期
+	if(data != null && data && data.key == "SERVICE_EXPIRATION") {
+		goLogin("SERVICE_EXPIRATION");
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * 验证是否登录
+ */
+function checkLogin2() {
+	var loginkey = getCookie("enterprisekey");
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		//		layer.confirm('您需要先登录才能进行更多操作，请问是否现在登录？', {
+		//			btn: ['前往登录', '稍后再说'],
+		//			icon: 3,
+		//			closeBtn: 0,
+		//			title: '是否登录'
+		//		}, function(index) {
+		//			goLoginForEnterprise(1);
+		//			// 关闭提示框
+		//			layer.close(index);
+		//		}, function(index) {
+		//			goLoginForEnterprise(2);
+		//			// 关闭提示框
+		//			layer.close(index);
+		//		});
+		goLoginForEnterprise(1);
+	}
+}
+
+function goLoginForEnterprise(e) {
+	if(e == 1) {
+		window.location.href = "../index.html";
+	} else if(e == 2) {
+		window.location.href = "index.html";
+	}
+}
+
+//$(".logout").click(function() {
+//	checkLogin2();
+//})
+
+/**
+ * 跳转至首页
+ * @param {Object} type
+ */
+function goLogin(type) {
+	var temp = "";
+	if(window.location.href.indexOf("/ccpit") != -1) {
+		temp = "/ccpitcompany"
+	}
+	window.top.location = "http://" + window.location.host + temp + "/login.html?error=" + type;
+}
+
+var checkTempUrlSend = "";
+// 获取当前时间
+var _nowDateTime = new Date();
+// 判断当前时间
+function GetDateTimeDiff(url) {
+	if(url != checkTempUrlSend) {
+		checkTempUrlSend = url;
+		return false;
+	} else {
+		// 获取当前时间
+		var _date = new Date();
+		var _datelong = _date.getTime() - _nowDateTime.getTime();
+		_nowDateTime = _date;
+		if(_datelong > 800) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+}
+//加密-----开始
+function changeDateFormat(time, format = 'YYYY-MM-DD hh:mm:ss') {
+  if(!time) return '';
+  var datetime = new Date(time);
+  var o = {
+      'Y+': datetime.getFullYear(),
+      "M+": datetime.getMonth() + 1,
+      "D+": datetime.getDate(),
+      "h+": datetime.getHours(),
+      "m+": datetime.getMinutes(),
+      "s+": datetime.getSeconds(),
+      "q+": Math.floor((datetime.getMonth() + 3) / 3),
+      "S": datetime.getMilliseconds()
+  };
+  if (/(Y+)/.test(format)) format = format.replace(RegExp.$1, (datetime.getFullYear() + "").substr(4 - RegExp.$1.length));
+  for (var k in o)
+      if (new RegExp("(" + k + ")").test(format)) {
+          format = format.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+      }
+  return format;
+}
+function md5(string) {
+  function md5_RotateLeft(lValue, iShiftBits) {
+      return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
+  }
+  function md5_AddUnsigned(lX, lY) {
+      var lX4, lY4, lX8, lY8, lResult;
+      lX8 = (lX & 0x80000000);
+      lY8 = (lY & 0x80000000);
+      lX4 = (lX & 0x40000000);
+      lY4 = (lY & 0x40000000);
+      lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
+      if (lX4 & lY4) {
+          return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+      }
+      if (lX4 | lY4) {
+          if (lResult & 0x40000000) {
+              return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+          } else {
+              return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+          }
+      } else {
+          return (lResult ^ lX8 ^ lY8);
+      }
+  }
+  function md5_F(x, y, z) {
+      return (x & y) | ((~x) & z);
+  }
+  function md5_G(x, y, z) {
+      return (x & z) | (y & (~z));
+  }
+  function md5_H(x, y, z) {
+      return (x ^ y ^ z);
+  }
+  function md5_I(x, y, z) {
+      return (y ^ (x | (~z)));
+  }
+  function md5_FF(a, b, c, d, x, s, ac) {
+      a = md5_AddUnsigned(a, md5_AddUnsigned(md5_AddUnsigned(md5_F(b, c, d), x), ac));
+      return md5_AddUnsigned(md5_RotateLeft(a, s), b);
+  };
+  function md5_GG(a, b, c, d, x, s, ac) {
+      a = md5_AddUnsigned(a, md5_AddUnsigned(md5_AddUnsigned(md5_G(b, c, d), x), ac));
+      return md5_AddUnsigned(md5_RotateLeft(a, s), b);
+  };
+  function md5_HH(a, b, c, d, x, s, ac) {
+      a = md5_AddUnsigned(a, md5_AddUnsigned(md5_AddUnsigned(md5_H(b, c, d), x), ac));
+      return md5_AddUnsigned(md5_RotateLeft(a, s), b);
+  };
+  function md5_II(a, b, c, d, x, s, ac) {
+      a = md5_AddUnsigned(a, md5_AddUnsigned(md5_AddUnsigned(md5_I(b, c, d), x), ac));
+      return md5_AddUnsigned(md5_RotateLeft(a, s), b);
+  };
+  function md5_ConvertToWordArray(string) {
+      var lWordCount;
+      var lMessageLength = string.length;
+      var lNumberOfWords_temp1 = lMessageLength + 8;
+      var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
+      var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
+      var lWordArray = Array(lNumberOfWords - 1);
+      var lBytePosition = 0;
+      var lByteCount = 0;
+      while (lByteCount < lMessageLength) {
+          lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+          lBytePosition = (lByteCount % 4) * 8;
+          lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount) << lBytePosition));
+          lByteCount++;
+      }
+      lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+      lBytePosition = (lByteCount % 4) * 8;
+      lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
+      lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+      lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
+      return lWordArray;
+  };
+  function md5_WordToHex(lValue) {
+      var WordToHexValue = "", WordToHexValue_temp = "", lByte, lCount;
+      for (lCount = 0; lCount <= 3; lCount++) {
+          lByte = (lValue >>> (lCount * 8)) & 255;
+          WordToHexValue_temp = "0" + lByte.toString(16);
+          WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
+      }
+      return WordToHexValue;
+  };
+  function md5_Utf8Encode(string) {
+      string = string.replace(/\r\n/g, "\n");
+      var utftext = "";
+      for (var n = 0; n < string.length; n++) {
+          var c = string.charCodeAt(n);
+          if (c < 128) {
+              utftext += String.fromCharCode(c);
+          } else if ((c > 127) && (c < 2048)) {
+              utftext += String.fromCharCode((c >> 6) | 192);
+              utftext += String.fromCharCode((c & 63) | 128);
+          } else {
+              utftext += String.fromCharCode((c >> 12) | 224);
+              utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+              utftext += String.fromCharCode((c & 63) | 128);
+          }
+      }
+      return utftext;
+  };
+  var x = Array();
+  var k, AA, BB, CC, DD, a, b, c, d;
+  var S11 = 7, S12 = 12, S13 = 17, S14 = 22;
+  var S21 = 5, S22 = 9, S23 = 14, S24 = 20;
+  var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
+  var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+  string = md5_Utf8Encode(string);
+  x = md5_ConvertToWordArray(string);
+  a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+  for (k = 0; k < x.length; k += 16) {
+      AA = a; BB = b; CC = c; DD = d;
+      a = md5_FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
+      d = md5_FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
+      c = md5_FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
+      b = md5_FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+      a = md5_FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
+      d = md5_FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
+      c = md5_FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
+      b = md5_FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+      a = md5_FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
+      d = md5_FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
+      c = md5_FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
+      b = md5_FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+      a = md5_FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
+      d = md5_FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
+      c = md5_FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
+      b = md5_FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+      a = md5_GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
+      d = md5_GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
+      c = md5_GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
+      b = md5_GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
+      a = md5_GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
+      d = md5_GG(d, a, b, c, x[k + 10], S22, 0x2441453);
+      c = md5_GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
+      b = md5_GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+      a = md5_GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
+      d = md5_GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
+      c = md5_GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
+      b = md5_GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+      a = md5_GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
+      d = md5_GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
+      c = md5_GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
+      b = md5_GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+      a = md5_HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
+      d = md5_HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
+      c = md5_HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
+      b = md5_HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+      a = md5_HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
+      d = md5_HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
+      c = md5_HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
+      b = md5_HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+      a = md5_HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
+      d = md5_HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
+      c = md5_HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
+      b = md5_HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+      a = md5_HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
+      d = md5_HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
+      c = md5_HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
+      b = md5_HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+      a = md5_II(a, b, c, d, x[k + 0], S41, 0xF4292244);
+      d = md5_II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
+      c = md5_II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
+      b = md5_II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+      a = md5_II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
+      d = md5_II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
+      c = md5_II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
+      b = md5_II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+      a = md5_II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
+      d = md5_II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
+      c = md5_II(c, d, a, b, x[k + 6], S43, 0xA3014314);
+      b = md5_II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+      a = md5_II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
+      d = md5_II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
+      c = md5_II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
+      b = md5_II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+      a = md5_AddUnsigned(a, AA);
+      b = md5_AddUnsigned(b, BB);
+      c = md5_AddUnsigned(c, CC);
+      d = md5_AddUnsigned(d, DD);
+  }
+  return (md5_WordToHex(a) + md5_WordToHex(b) + md5_WordToHex(c) + md5_WordToHex(d)).toLowerCase();
+}
+function filterAjax(url,method){
+	if(url!='' && url!=null && url!=undefined){
+	//	url后有参数要去掉
+		let parIdx=url.indexOf('?')
+		if(parIdx>-1){
+			url=url.substring(0,parIdx)
+		}
+		
+		let curUrl
+		if(url.indexOf('/ccpitcompany')>-1){
+			let idx=url.lastIndexOf('/ccpitcompany')+13
+			
+			curUrl=url.substring(idx,url.length)
+		}else if (url.indexOf('www.rzccpit.com')>-1){
+			let idx=url.lastIndexOf('www.rzccpit.com')+15
+			curUrl=url.substring(idx,url.length)
+		}else{
+	//		有的页面没有加COMMONPATH
+			if(url.indexOf('../')>-1){
+				url=url.replace('../','')
+			}
+			curUrl='/'+url
+			url=COMMONPATH+'/'+url
+			
+		}
+		
+		
+		let token=getCookie("enterprisekey")
+		var sign_key
+		if(!!token){
+			let useid=getCookie("enterpriseid")
+			curUrl=curUrl.replace('api/','applet/')
+			url=url.replace('api/','applet/')
+			 var paramsA=useid+changeDateFormat(new Date(),'YYYY-MM-DD')+"userpc"+"jiangsuhailonghuasi"+curUrl+changeDateFormat(new Date(),'YYYY-MM-DD')+token
+		       
+		     var result=md5(paramsA)
+		     sign_key=result.toLocaleUpperCase()
+		}else{
+			var tmpurljm=url
+			curUrl=curUrl.replace('pc/','noapi/')
+			url=url.replace('pc/','noapi/')
+			
+			 if(method=="get"||method=="GET"){
+				 tmpurljm=curUrl.split("?")[0]
+	          }else{
+	            tmpurljm=curUrl
+	          }
+			var paramsB=changeDateFormat(new Date(),'YYYY-MM-DD')+"userpc"+"jiangsuhailonghuasi"+tmpurljm+changeDateFormat(new Date(),'YYYY-MM-DD')
+		     
+			var resultB=md5(paramsB)
+	        sign_key=resultB.toLocaleUpperCase()
+		}
+		let obj={sign_key:sign_key,url:url}
+		return obj
+	}
+}
+/*
+ * ajax 共通请求
+ * url：请求路径
+ * formdata：数据
+ * type：请求类型
+ * async：是否异步
+ * callback：回调函数
+ */
+function commonAjax(url, formdata, type, async, callback) {
+	let obj = filterAjax(url,type)
+	// 判断两次点击间隔
+	if(GetDateTimeDiff(url)) {
+		return;
+	}
+	formdata.append("sign_key", obj.sign_key)
+	formdata.append("admintype", "userpc");
+	log("AJAX请求开始。");
+	log("AJAX请求地址：" + url);
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					// 回调
+					if(callback && typeof(callback) == 'function') callback(data);
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			console.log("AJAX请求失败。"+url);
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+
+/*
+ * ajax 共通请求
+ * url：请求路径
+ * formdata：数据
+ * type：请求类型
+ * async：是否异步
+ * callback：回调函数
+ */
+function commonAjaxAnyWay(url, formdata, type, async, callback) {
+	log("AJAX请求开始。");
+	log("AJAX请求地址：" + url);
+	let obj = filterAjax(url,type)
+	
+	formdata.append("sign_key", obj.sign_key)
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					// 回调
+					if(callback && typeof(callback) == 'function') callback(data);
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			log("AJAX请求失败。");
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+
+var AjaxSubmit = false;
+/*
+ * ajax 共通请求
+ * url：请求路径
+ * formdata：数据
+ * type：请求类型
+ * async：是否异步
+ * callback：回调函数
+ */
+function commonAjaxSubmit(url, formdata, type, async, callback) {
+	
+    let obj = filterAjax(url,type)
+	formdata.append("sign_key", obj.sign_key)
+	if(AjaxSubmit) {
+		log("AJAX重复请求：" + url);
+		return false;
+	}
+	AjaxSubmit = true;
+	log("AJAX请求开始。");
+	log("AJAX请求地址：" + url);
+	//	for(var entry of formdata.entries()) {
+	//		log("AJAX请求参数：" + "[name]:" + entry[0] + ",[value]:" + entry[1]);
+	//	};
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					// 回调
+					if(callback && typeof(callback) == 'function') callback(data);
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+			AjaxSubmit = false;
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			AjaxSubmit = false;
+			log("AJAX请求失败。");
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+
+/*
+ * ajax 共通请求
+ * url：请求路径
+ * formdata：数据
+ * type：请求类型
+ * async：是否异步
+ * callback：回调函数
+ */
+function commonAjax2(url, formdata, type, async, callback) {
+	let obj = filterAjax(url,type)
+	formdata.append("sign_key", obj.sign_key)
+	
+	log("AJAX请求开始。");
+	log("AJAX请求地址：" + url);
+	//	for(var entry of formdata.entries()) {
+	//		log("AJAX请求参数：" + "[name]:" + entry[0] + ",[value]:" + entry[1]);
+	//	};
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 回调
+				if(callback && typeof(callback) == 'function') callback(data);
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			log("AJAX请求失败。");
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+/*
+ * ajax 共通请求
+ * url：请求路径
+ * formdata：数据
+ * type：请求类型
+ * async：是否异步
+ * callback：回调函数
+ * adminFlag：是否需要传入用户信息签名(可不传，需要时传true)
+ */
+function commonAjaxLeast(url, formdata, type, async, callback, adminFlag,signSalt) {
+    var headers = getAjaxHeader(adminFlag,signSalt);
+    $.ajax({
+        url: url,
+        headers: headers,
+        type: type,
+        dataType: "json",
+        data: type == 'post' ? JSON.stringify(formdata) : formdata,
+        // 告诉jQuery不要去处理发送的数据
+        processData: type == "post" ? false : true,
+        // 告诉jQuery不要去设置Content-Type请求头,post请求formdata数据需用JSON.stringify()进行转码
+        contentType: type == "post" ? "application/json;charset=UTF-8" : 'application/json',
+        async: async,
+        cache: false,
+        success: function (data) {
+            if (data.code == 200 || data.code == 0) {
+                // 回调
+                if (callback && typeof (callback) == 'function') callback(data);
+            } else if (data.code == 530) {
+                //todo 重新登录
+                window.top.location = WEBPATH + "/index.html"
+            } else {
+                var msg = '服务异常，请联系管理员！';
+                if (data.msg)
+                    msg = data.msg;
+                alertError(msg)
+            }
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			var msg = '服务异常，请稍后再试！';
+			alertError(msg)
+            layer.close(loader);
+        }
+    });
+}
+
+//// 请求地址
+//var url = "../../SELECT";
+//// 参数
+//var formData = new FormData();
+//formData.append(name, element);
+//formData.append('myfile', $('input[name=myfile]')[0].files[0]);
+//// 开始请求
+// commonAjax(url, formData, "post", true, function(data){
+// 	// 数据
+// 	temp = data[1];
+// });
+var pageSize = 20;
+
+/*获取基础路径Start*/
+var COMMONPATH = "..";
+var WEBPATH = "https://www.rzccpit.com"
+
+var tempCOMMONPATH = window.location.protocol + "//" + top.window.location.host;
+
+if(top.window.location.href.indexOf("localhost") > -1||top.window.location.href.indexOf("172.24.7.8") > -1) {
+	tempCOMMONPATH = "http://" + top.window.location.host + "/ccpitcompany";
+} else {
+	tempCOMMONPATH = window.location.protocol + "//" + top.window.location.host;
+}
+
+//var tempCOMMONPATH = "http://" + top.window.location.host;
+//if(top.window.location.href.indexOf("/ccpit") != -1) {
+//	tempCOMMONPATH = tempCOMMONPATH + "/ccpitcompany"
+//}
+
+COMMONPATH = tempCOMMONPATH;
+COMMONPATH="https://www.rzccpit.com";
+
+
+
+
+// 微信调试暂时改
+/*获取基础路径END*/
+
+
+function strToJson(str) {
+	var json = eval('(' + str + ')');
+	return json;
+}
+
+//快递单号查询
+function Express(express_name, express_no) {
+	window.open("https://www.kuaidi100.com/chaxun?com=" + express_name + "&nu=" + express_no);
+}
+
+/*
+ * 14位编号按6,3,5加空格分隔
+ */
+function splitBySpace(number) {
+	return number;
+	if(number.length == 14) {
+		var firstnum = number.substr(0, 6);
+		var secondnum = number.substr(6, 3);
+		var thirdnum = number.substr(9, 5);
+		return(firstnum + " " + secondnum + " " + thirdnum);
+	} else {
+		return number;
+	}
+}
+/*
+ * 去除空格
+ */
+function trim(str) {
+	return str.replace(/\s|\xA0/g, "");
+}
+
+/**
+ * 省份下拉显示
+ * 
+ */
+function getprovince() {
+	var formData = new FormData();
+	formData.append("type","province");
+	formData.append("name","");
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			for(var i = 0; i < data.body.length; i++) {
+				$("#province").append('<option value=' + data.body[i].name + '>' + data.body[i].name + '</option>');
+			}
+		}
+	})
+}
+
+function getprovince2(targetobj) {
+	var formData = new FormData();
+	formData.append("type","province");
+	formData.append("name","");
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			for(var i = 0; i < data.body.length; i++) {
+				$(targetobj).append('<option value=' + data.body[i].name + '>' + data.body[i].name + '</option>');
+			}
+		}
+	})
+}
+
+function getprovincereg() {
+	var formData = new FormData();
+	formData.append("type","province");
+	formData.append("name","");
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			for(var i = 0; i < data.body.length; i++) {
+				$("#province").append('<option value=' + data.body[i].name + '>' + data.body[i].name + '</option>');
+			}
+		}
+	})
+}
+function getprovince2reg(targetobj) {
+	var formData = new FormData();
+	formData.append("type","province");
+	formData.append("name","");
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			for(var i = 0; i < data.body.length; i++) {
+				$(targetobj).append('<option value=' + data.body[i].name + '>' + data.body[i].name + '</option>');
+			}
+		}
+	})
+}
+/*
+ * 市区下拉显示
+ */
+function getcountry(province) {
+	$("#city").empty();
+	var formData = new FormData();
+	formData.append("type","city");
+	formData.append("name",province);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			$("#city").append('<option value="">请选择市</option>');
+			for(var j = 0; j <data.body.length; j++) {
+				$("#city").append('<option value=' + data.body[j].name + '>' + data.body[j].name + '</option>');
+			}
+		}
+	})
+}
+function getcountry2(province,targetobj) {
+	$(targetobj).empty();
+	var formData = new FormData();
+	formData.append("type","city");
+	formData.append("name",province);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			$(targetobj).append('<option value="">请选择市</option>');
+			for(var j = 0; j <data.body.length; j++) {
+				$(targetobj).append('<option value=' + data.body[j].name + '>' + data.body[j].name + '</option>');
+			}
+		}
+	})
+}
+
+function getcountryreg(province) {
+	$("#city").empty();
+	var formData = new FormData();
+	formData.append("type","city");
+	formData.append("name",province);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			$("#city").append('<option value="">请选择市</option>');
+			for(var j = 0; j <data.body.length; j++) {
+				$("#city").append('<option value=' + data.body[j].name + '>' + data.body[j].name + '</option>');
+			}
+		}
+	})
+}
+
+function getcountry2reg(province,targetobj) {
+	$(targetobj).empty();
+	var formData = new FormData();
+	formData.append("type","city");
+	formData.append("name",province);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+			$(targetobj).append('<option value="">请选择市</option>');
+			for(var j = 0; j <data.body.length; j++) {
+				$(targetobj).append('<option value=' + data.body[j].name + '>' + data.body[j].name + '</option>');
+			}
+		}
+	})
+}
+/*
+ * 区下拉显示
+ */
+function getCity(country) {
+	$("#area").empty();
+	var formData = new FormData();
+	formData.append("type","district");
+	formData.append("name",country);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+				$("#area").append('<option value="">请选择区</option>');
+
+				for(var k = 0; k < data.body.length; k++) {
+					$("#area").append('<option value=' + data.body[k].name + '>' + data.body[k].name + '</option>');
+				}
+			} else {
+				$("#area").append('<option  selected value="">辖区</option>');
+			}
+	})
+}
+
+function getCity2(country,targetobj) {
+	$(targetobj).empty();
+	var formData = new FormData();
+	formData.append("type","district");
+	formData.append("name",country);
+	commonAjax(COMMONPATH+"/pc/district/getByCodeOrType?timestamp=" + new Date().getTime() , formData, "post", false, function(data) {
+		if(data.body.length>0){
+				$(targetobj).append('<option value="">请选择区</option>');
+
+				for(var k = 0; k < data.body.length; k++) {
+					$(targetobj).append('<option value=' + data.body[k].name + '>' + data.body[k].name + '</option>');
+				}
+			} else {
+				$(targetobj).append('<option  selected value="">辖区</option>');
+			}
+	})
+}
+
+//---------------------------企业注册
+
+
+// 兼容ie8日志
+window._console = window.console; //将原始console对象缓存
+window.console = (function(orgConsole) {
+	return { //构造的新console对象
+		log: getConsoleFn("log"),
+		debug: getConsoleFn("debug"),
+		info: getConsoleFn("info"),
+		warn: getConsoleFn("warn"),
+		exception: getConsoleFn("exception"),
+		assert: getConsoleFn("assert"),
+		dir: getConsoleFn("dir"),
+		dirxml: getConsoleFn("dirxml"),
+		trace: getConsoleFn("trace"),
+		group: getConsoleFn("group"),
+		groupCollapsed: getConsoleFn("groupCollapsed"),
+		groupEnd: getConsoleFn("groupEnd"),
+		profile: getConsoleFn("profile"),
+		profileEnd: getConsoleFn("profileEnd"),
+		count: getConsoleFn("count"),
+		clear: getConsoleFn("clear"),
+		time: getConsoleFn("time"),
+		timeEnd: getConsoleFn("timeEnd"),
+		timeStamp: getConsoleFn("timeStamp"),
+		table: getConsoleFn("table"),
+		error: getConsoleFn("error"),
+		memory: getConsoleFn("memory"),
+		markTimeline: getConsoleFn("markTimeline"),
+		timeline: getConsoleFn("timeline"),
+		timelineEnd: getConsoleFn("timelineEnd")
+	};
+
+	function getConsoleFn(name) {
+		return function actionConsole() {
+			if(typeof(orgConsole) !== "object") return;
+			if(typeof(orgConsole[name]) !== "function") return; //判断原始console对象中是否含有此方法，若没有则直接返回
+			return orgConsole[name].apply(orgConsole, Array.prototype.slice.call(arguments)); //调用原始函数
+		};
+	}
+}(window._console));
+
+String.prototype.trim = function() {
+	return this.replace(/(^\s*)|(\s*$)/g, "");
+}
+
+//预付显示
+var yufuxianshi = "此预付费表示企业在办理相关业务的时候提前交纳预付的费用，最后还要根据贸促会实际核算再补缴或退还最终的费用！";
+//代收代付显示
+var daishoudaifu = "【代收/代付】表示总会的费用由本贸促会替总会代收，最终由本贸促会统一跟总会结算！";
+
+//ajax请求normal
+function commonAjaxNormal(url, formdata, type, async, callback) {
+	log("AJAX请求开始。");
+	log("AJAX请求地址：" + url);
+	let obj = filterAjax(url,type)
+	formdata.append("sign_key", obj.sign_key)
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					// 回调
+					if(callback && typeof(callback) == 'function') callback(data);
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			log("AJAX请求失败。");
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+
+//时间yyyyMMdd转yyyy-MM-dd
+function changeTimeType(e) {
+	if(e != undefined && e != null && e.length == 8) {
+		var a = "";
+		a = e.substr(0, 4) + "-" + e.substr(4, 2) + "-" + e.substr(6, 2);
+		return a;
+	} else {
+		return "";
+	}
+}
+
+// 替换,为 空
+function replacestr(str) {
+	if(str != undefined && str != null && str != "") {
+		return str.replaceAll("'", "");
+	} else {
+		return "";
+	}
+}
+//获取URL地址
+function getEnterpriseURL(tourls) {
+	$.ajax({
+		url: COMMONPATH+"/pc/organizationandembassy/select/one/byurlname",
+		type: "post",
+		dataType: "json",
+		data: {
+			url_names: tourls,
+			admintype: "userpc",
+			adminid: getCookie("enterpriseid"),
+			adminkey: getCookie("enterprisekey")
+		},
+		async: false,
+		cache: false,
+		contentType: 'application/x-www-form-urlencoded;charset=utf-8',
+		success: function(data) {
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					URL_PATH = data.body[0];
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning(msg_Ajax_NoData);
+			}
+			
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+
+}
+
+function commonAjaxLeft(url, formdata, type, async, callback) {
+	let obj = filterAjax(url,type)
+	formdata.append("sign_key", obj.sign_key)
+	$.ajax({
+		url: obj.url,
+		type: type,
+		dataType: "json",
+		data: formdata,
+		// 告诉jQuery不要去处理发送的数据
+		processData: false,
+		// 告诉jQuery不要去设置Content-Type请求头
+		contentType: false,
+		async: async,
+		cache: false,
+		success: function(data) {
+			log("AJAX请求成功。");
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					// 回调
+					if(callback && typeof(callback) == 'function') callback(data);
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning("服务器没有返回数据，请联系管理员！");
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			log("AJAX请求失败。");
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+}
+
+//获取URL地址
+function getEnterpriseURL1(url) {
+	$.ajax({
+		url:COMMONPATH+ "/pc/organizationandembassy/select/one/byurlname",
+		type: "post",
+		dataType: "json",
+		data: {
+			url_names: url,
+			admintype: "userpc",
+			adminid: getCookie("enterpriseid"),
+			adminkey: getCookie("enterprisekey")
+		},
+		async: false,
+		cache: false,
+		contentType: 'application/x-www-form-urlencoded;charset=utf-8',
+		success: function(data) {
+			if(checkError(data)) return false;
+			if(data != null) {
+				// 判断是否成功
+				if(data.key == "SUCCESS") {
+					URL_PATH = data.body[0];
+				} else {
+					alertWarning(data.msg);
+				}
+			} else {
+				alertWarning(msg_Ajax_NoData);
+			}
+		},
+		error: function(XMLHttpRequest, textStatus, errorThrown) {
+			errorLogin(XMLHttpRequest, textStatus, errorThrown);
+		}
+	});
+
+}
+
+function getMenu(){
+	var dfk="0";
+	var dkp="0";
+	var yq="0";
+	var bd="0";
+	var lsrzCount="0";
+	var sszmsCount="0";
+	var zyxszmsCount="0";
+	var spppzmsCount="0";
+	var stationMessageNoReadCount="0";
+	var attachCertificateCount = "0";
+	var elecAttachCertificateCount = "0";
+	var jfkp = "0";
+	var sszm ="0";
+	var lsrz = "0";
+	var userhead= WEBPATH +'/'+"img/mycenter/td.png";
+	try{
+		var url = COMMONPATH+ "/api/pc/personalcenter/v2/person/queryPymentcount";
+		var formData = new FormData();
+		if(getCookie("logintype")=="user") {
+			formData.append("send_type", 1);
+			formData.append("enterprise_guid", getCookie("enterpriseid"));
+			formData.append("user_id", getCookie("enterpriseid"));
+			formData.append("read_type", 0);
+		}else {
+			formData.append("send_type", "");
+			formData.append("enterprise_guid", getCookie("userenterpriseguid"));
+			formData.append("user_id", getCookie("enterpriseid"));
+			formData.append("read_type", 0);
+		}
+
+		formData.append("logintype",getCookie("logintype"));
+		formData.append("companycookie",getCookie("userenterpriseguid"));
+		formData.append("selectdCompanyGuid",getCookie("userenterpriseguid"));
+
+		formData.append("admintype", "userpc");
+		formData.append("adminid", getCookie("enterpriseid"));
+		formData.append("adminkey", getCookie("enterprisekey"));
+		commonAjaxSubmit(url, formData, "post", false, function(data) {
+			dfk=data.body[0].count;
+			dkp=data.subbodyTwo[0].count;
+			yq=data.subbodyThr[0].count;
+			bd=data.subbodyFour[0].count;
+			stationMessageNoReadCount=data.subbodyFive[0].count;
+			lsrzCount=data.contextTwo;
+			sszmsCount=data.contextThree;
+			zyxszmsCount=data.contextFour;
+			// spppzmsCount=data.contextFive;
+			attachCertificateCount = data.contextSeven;
+			elecAttachCertificateCount = data.contextEight==null?0:data.contextEight;
+			if(data.contextSix!=""){
+				userhead = COMMONPATH +  '/upload/head/' + data.contextSix;
+			}
+			jfkp = parseInt(dfk)+parseInt(dkp);
+			sszm = parseInt(sszmsCount)+parseInt(zyxszmsCount);
+			lsrz = parseInt(lsrzCount)+parseInt(attachCertificateCount);
+		});
+		
+		// 商品品牌证书数量
+		commonAjaxLeast( COMMONPATH + '/productBrandApi/enterprise/brandApply/dataCount', {}, "get",false, function (data) {
+			spppzmsCount = data.data
+		}, true, "ccpit_product_brand_enterprise");
+	}catch(ex){
+		
+	}
+	if(getCookie("logintype")=="user"){
+		// $('.leftDiv').load(COMMONPATH+'/leftmenu.html');
+		var html='';
+		html+='<div>';
+		html+='<div id="leftbottomcontent" style="background-color: #F0F0F0;text-align: center;width:250px !important" class="clearfix">';
+		html+='<ul class="layui-nav layui-nav-tree layui-inline" lay-shrink="all" lay-filter="cdzfilter"';
+		html+='style="border-radius: 8px;margin-top: 0px;color: dimgrey ;width: 250px;min-height:calc(100vh - 463px);">';
+		html+='<li class="layui-nav-item layui-zhzx">';
+		html+='<a href="'+ WEBPATH +'/'+'/myCenter.html" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/'+'/img/indexV2/zhzx.png" style="width:20px" id="zhzx">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;">账户中心</span>';
+		html+='</a>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/img/indexV2/grsz.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">个人设置</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+	//	html+='<dd class="user "><a href="'+ WEBPATH +'/'+'/myCenter.html"><span id="myIndex">分析</span></a></dd>';
+		html+='<dd class="user"><a href="'+ WEBPATH +'/'+'/rightMain/myInfo.html"><span id="myInfo">个人信息</span></a></dd>';
+		html+='<dd class="user"><a href="'+ WEBPATH +'/'+'/rightMain/cyenterprise.html"><span id="cyenterprise">常用企业</span></a></dd>';
+	//	html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/mypassword.html"><span id="editpassword">密码修改</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/materialstorageqt.html" ><span id="materialstorage">材料管理</span></a></dd>';
+		html+='<dd class=""><a href="'+ WEBPATH +'/'+'/rightMain/commonaddress.html"><span id="commonaddress">邮寄地址</span></a></dd>';
+		html+='<dd class=""><a href="'+ WEBPATH +'/'+'/rightMain/stationMessageList.html"><span id="stationMessageList">站内消息</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/img/jfkp.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">缴费/开票</span><span style="position: absolute;right: 30px;color: #61a4e4;line-height:45px">'+jfkp+'</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/paymentrecordsweifu.html" style="position:relative;"><span id="paymentrecordsweifu">待付款</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+dfk+'</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/waterManage.html" ><span id="waterManage">转账凭证管理</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/waitInvoice.html"  style="position:relative;"><span id="waitInvoice">待开票</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+dkp+'</span></a>	</dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/paymentrecordsyikai.html" ><span id="paymentrecordsyikai">已开票</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="' + WEBPATH + '/img/indexV2/sszms.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">商事证明</span><span style="position: absolute;right: 30px;color: #61a4e4;line-height:45px">'+sszm+'</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/certificatelist.html" style="position:relative;"><span id="certi">商事证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+sszmsCount+'</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/freeSaleCertificateList.html" style="position:relative;"><span id="freeSale">自由销售证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+zyxszmsCount+'</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item layui-dzhy">';
+		html+='<a href="'+ WEBPATH +'/'+'rightMain/attachCertificateList.html?tag=DZCDZ&fromType=elecAttachCert" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/'+'/img/indexV2/dzhy.png" style="width:20px" id="dzhy">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;" id="elecAttachCertificate">电子附加证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+elecAttachCertificateCount+'</span>';
+		html+='</a>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/img/indexV2/lshy.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">领事/海牙</span><span style="position: absolute;right: 30px;color: #61a4e4;line-height:45px">'+lsrz+'</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/consularlist.html?tag=LSRZ" style="position:relative;"><span id="consular">领事认证</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+lsrzCount+'</span></a></dd>';
+		html+='<dd><a href="'+WEBPATH+'/'+'rightMain/attachCertificateList.html?tag=HYRZ" style="position:relative;"><span id="attachCertificate">海牙证书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+attachCertificateCount+'</span></a></dd>';		
+		//html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/freeSaleCertificateList.html" style="position:relative;"><span id="freeSale">自由销售证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+zyxszmsCount+'</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		
+		html+='<li id="yuanchandi" class="layui-nav-item ">';
+	html+='<a href="javascript:;" class="layui-new-index-a">';
+	html+='<img src="'+ WEBPATH +'/img/indexV2/cdz.png" style="width:20px">';
+	html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">原产地</span>';
+	html+='</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/generalCertificateOoriginListAll.html?type=0&permission=1-2-3-4-5-6"><span id="generalCertificateOoriginList0"></span>非优惠原产地证书</a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/preferentialcertificateListAll.html?type=0&permission=1-2-3-4-5-6"><span id="preferentialcertificate0"></span>优惠原产地证书</a></dd>';
+    html+='<dd><a href="'+ WEBPATH +'/'+'/BtoB/electronicFiling/list.html"><span id="electronizeFiling"></span>RCEP背对背电子化备案</a></dd>';
+	html+='<dd >';
+	html+='<a href="javascript:;">信息备案</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/cdzEnterpriseBeian.html"><span id="enterpriceba">企业备案</span></a></dd>';
+	// html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/signerBeiAnList.html" ><span id="usersignba">手签员备案</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/goodsBeiAnList.html" ><span id="goodsba">商品备案</span></a></dd>';
+	html+='</dl>';
+	html+='</dd>';
+	html+='<dd >';
+	html+='<a href="javascript:;">基础数据</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/exporterManage.html" ><span id="exporterManage">出口商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/importerManage.html" ><span id="importerManage">进口商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/receiverManage.html" ><span id="receiverManage">生产商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/specificItems.html" ><span id="specificItems">特殊条款</span></a></dd>';
+	html+='</dl>';
+	html+='</dd>';
+	html+='</dl>';
+	html+='</li>';
+		html+='<li class="layui-nav-item " >';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/img/indexV2/productBrand.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">商品品牌</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/productBrandWeb/orderList.html" style="position:relative;"><span id="goodscer">认证订单</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item " >';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/img/indexV2/landmark.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">地理标志</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/orderList.html" style="position:relative;"><span id="certify">认证订单</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/product/list.html" style="position:relative;"><span id="product">产品管理</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/vr/list.html" style="position:relative;"><span id="vr">VR管理</span></a></dd>';
+		html+='<dd><a href="'+WEBPATH+'/'+'/landmarkWeb/productTab/list.html" style="position:relative;"><span id="productTab">产品标签管理</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+			//双碳业务 begin
+			// html+='<li class="layui-nav-item ">';
+			// html+='<a href="javascript:;" class="layui-new-index-a">';
+			// html+='<img src="'+ WEBPATH +'/img/ycdz.png" style="margin-left:20px;width:20px">';
+			// html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">绿色低碳认证</span>';
+			// html+='</a>';
+			// html+='<dl class="layui-nav-child">';
+			// html+='<dd><a href="'+WEBPATH+'/'+'/doubleCarbonWeb/list.html" style="position:relative;"><span id="doubleCarbon">业务办理</span><span style="position: absolute;right: 10px;color: #61a4e4;"></span></a></dd>';
+			// html+='</dd>';
+			// html+='</dl>';
+			// html+='</li>';
+		html+='<li class="layui-nav-item layui-wjdc" id="question">';
+		html+='<a href="'+ WEBPATH +'/'+'rightMain/replyquestionlist.html" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/'+'/img/indexV2/question.png" style="width:20px" id="questionImg">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;">问卷调查</span>';
+		html+='</a>';
+		html+='</li>';
+		html+='</ul>';
+		html+='</div>';
+		html+='</div>';
+		$(".leftDiv").html(html);
+		var html2 = "";
+			html2+='<label class="layui-form-label" style="width: 70%;"><span class="jcxx">基础信息</span></label>';
+			html2+='<div style="position: absolute;top: 14px;padding-left: 19%;">'
+			html2+='<div id="smcount" style="text-align: center;position: absolute;right: -7px;top: -5px;width: 13px;height: 13px;line-height:13px;border-radius: 50%;border: 1px solid #fff;background-color: red;color: #fff;font-size:12px;';
+			html2+=(stationMessageNoReadCount==0?'display:none;':'display:block;')+'">'+stationMessageNoReadCount;
+			html2+='</div><img src="img/indexV2/menu.png" alt="" style="width:25px;cursor: pointer;" onclick="goInforSm()"></div>';
+			html2+='<img id="headpic" src="./img/indexV2/user.png" onerror="javascript:this.src=\''+ WEBPATH +'/'+'img/indexV2/user.png\'" style="margin-left:37%;margin-top: 20px;border-radius:60px;height: 80px;width: 80px;" />';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:170px;margin:0 auto;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;width:70px;text-align:left" >姓名：</span>';
+			html2+='<span  style="float:right;color:black;width:80px;text-align:center;font-weight:bold;">'+getCookie("enterprisename")+'</span>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:220px;margin:0 auto;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;text-align:left;margin-left:25px" >ID：</span>';
+			html2+='<span id="userphone" style="float:right;color:black;width:130px;text-align:center;font-weight:bold;">'+getCookie("enterprisephone")+'</span>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:170px;margin:0 auto;;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;width:70px;text-align:left" >常用企业：</span>';
+			html2+='<a id="authComNum" href="'+WEBPATH+'/rightMain/cyenterprise.html" style="float:right;color:black;width:80px;text-align:center;font-weight:bold;text-decoration:underline !important">'+bd+'</a>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:170px;margin:0 auto;;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;width:70px;text-align:left" >待付款：</span>';
+			html2+='<a id="waitPayNum"  href="'+WEBPATH+'/newCertificateConsular/paymentrecordsweifu.html" style="float:right;color:black;width:80px;text-align:center;font-weight:bold;text-decoration:underline !important">'+dfk+'</a>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:170px;margin:0 auto;;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;width:70px;text-align:left" >待开票：</span>';
+			html2+='<a id="waitOpenTickNum"  href="'+WEBPATH+'/newCertificateConsular/waitInvoice.html" style="float:right;color:black;width:80px;text-align:center;font-weight:bold;text-decoration:underline !important">'+dkp+'</a>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:210px;margin:0 auto;;margin-top:10px;">';
+			html2+='<div class="layui-form-item" style="background-color:#fde7e7;line-height:30px;border-radius:5px;">';
+			html2+='<span style="float:left;color:#ff182c;width:70px;text-align:left;margin-left:20px" >逾期付款：</span>';
+			html2+='<a id="yuqiNum" href="'+WEBPATH+'/newCertificateConsular/paymentrecordsweifu.html" style="float:left;color:#ff182c;width:120px;text-align:center;font-weight:bold;text-decoration:underline !important">'+yq+'</a>';
+			html2+='</div>';
+			html2+='</div>';
+		$(".userInfo").html(html2);
+	}else{
+		var html='';
+		html+='<div id="leftbottomcontent" style="background-color: #F0F0F0;text-align: center;width:250px !important" class="clearfix">';
+		html+='<ul class="layui-nav layui-nav-tree layui-inline" lay-shrink="all" lay-filter="cdzfilter"';
+		html+='style="border-top-right-radius: 8px;border-bottom-right-radius: 8px;margin-top: 0px;color: dimgrey ;width: 250px;min-height:calc(100vh - 463px);">';
+		html+='<li class="layui-nav-item layui-zhzx">';
+		html+='<a href="'+ WEBPATH +'/'+'/myindex.html" class="layui-new-index-a">';
+		html+='<img src="'+ WEBPATH +'/'+'/img/indexV2/zhzx.png" style="width:20px" id="zhzx">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;">账户中心</span>';
+		html+='</a>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;"  class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/indexV2/grsz.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">企业设置</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		//html+='<dd class="company "><a href="'+ WEBPATH +'/'+'/myindex.html"><span id="myIndex">分析</span></a></dd>';
+		html+='<dd class="company"><a href="'+ WEBPATH +'/'+'/rightMain/enterprisebinding.html"><span id="usefulenterprise">企业账户</span></a></dd>';
+		html+='<dd class="company"><a href="'+ WEBPATH +'/'+'/rightMain/enterpriseInvoiceSetting.html"><span id="enterpriseInvoice">开票信息</span></a></dd>';
+		html+='<dd class="company"><a href="'+ WEBPATH +'/'+'/rightMain/enterprisebinding.html?flag=zzcl"><span id="companyzzcl">资质材料</span></a></dd>';
+		html+='<dd class=""><a href="'+ WEBPATH +'/'+'/rightMain/commonaddress.html"><span id="commonaddress">邮寄地址</span></a></dd>';
+		html+='<dd class=""><a href="'+ WEBPATH +'/'+'/rightMain/stationMessageList.html"><span id="stationMessageList">站内消息</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/jfkp.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">缴费/开票</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/paymentrecordsweifu.html" style="position:relative;"><span id="paymentrecordsweifu">待付款</span><span style="position: absolute;right: 10px;color: #61a4e4;"></span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/waterManage.html" ><span id="waterManage">转账凭证管理</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/waitInvoice.html"  style="position:relative;"><span id="waitInvoice">待开票</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+dkp+'</span></a>	</dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/newCertificateConsular/paymentrecordsyikai.html" ><span id="paymentrecordsyikai">已开票</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+= '<li class="layui-nav-item">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/indexV2/sszms.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">商事证明</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/certificatelist.html" style="position:relative;"><span id="certi">商事证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+sszmsCount+'</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/freeSaleCertificateList.html" style="position:relative;"><span id="freeSale">自由销售证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+zyxszmsCount+'</span></a></dd>';
+		html+='</dl>';
+		html+= '</li>';
+		html += '<li class="layui-nav-item layui-dzhy">';
+		html += '<a href="' + WEBPATH + '/' +
+			'rightMain/attachCertificateList.html?tag=DZCDZ&fromType=elecAttachCert" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/' + '/img/indexV2/dzhy.png" style="width:20px" id="dzhy">';
+		html +=
+			'<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;" id="elecAttachCertificate">电子附加证明书</span>';
+		html += '</a>';
+		html += '</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/indexV2/lshy.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">领事/海牙</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/consularlist.html?tag=LSRZ" style="position:relative;"><span id="consular">领事认证</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+lsrzCount+'</span></a></dd>';
+		html+='<dd><a href="'+WEBPATH+'/'+'rightMain/attachCertificateList.html?tag=HYRZ" style="position:relative;"><span id="attachCertificate">海牙证书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+attachCertificateCount+'</span></a></dd>';
+		//html+='<dd><a href="'+WEBPATH+'/'+'rightMain/attachCertificateList.html?fromType=elecAttachCert" style="position:relative;"><span id="elecAttachCertificate">电子海牙证书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+elecAttachCertificateCount+'</span></a></dd>';
+		
+		//html+='<dd><a href="'+ WEBPATH +'/'+'/rightMain/certificatelist.html" style="position:relative;" ><span id="certi">商事证明书</span><span style="position: absolute;right: 10px;color: #61a4e4;">'+sszmsCount+'</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+				//双碳业务 begin
+		
+		html+='<li id="yuanchandi" class="layui-nav-item ">';
+	html+='<a href="javascript:;" class="layui-new-index-a">';
+	html += '<img src="' + WEBPATH + '/img/indexV2/cdz.png" style="width:20px">';
+	html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">原产地</span>';
+	html+='</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/generalCertificateOoriginListAll.html?type=0&permission=1-2-3-4-5-6"><span id="generalCertificateOoriginList0"></span>非优惠原产地证书</a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/preferentialcertificateListAll.html?type=0&permission=1-2-3-4-5-6"><span id="preferentialcertificate0"></span>优惠原产地证书</a></dd>';
+      html+='<dd><a href="'+ WEBPATH +'/'+'/BtoB/electronicFiling/list.html"><span id="electronizeFiling"></span>RCEP背对背电子化备案</a></dd>';
+	html+='<dd >';
+	html+='<a href="javascript:;">信息备案</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/cdzEnterpriseBeian.html"><span id="enterpriceba">企业备案</span></a></dd>';
+	// html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/signerBeiAnList.html" ><span id="usersignba">手签员备案</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/goodsBeiAnList.html" ><span id="goodsba">商品备案</span></a></dd>';
+	html+='</dl>';
+	html+='</dd>';
+	html+='<dd >';
+	html+='<a href="javascript:;">基础数据</a>';
+	html+='<dl class="layui-nav-child">';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/exporterManage.html" ><span id="exporterManage">出口商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/importerManage.html" ><span id="importerManage">进口商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/receiverManage.html" ><span id="receiverManage">生产商</span></a></dd>';
+	html+='<dd><a href="'+ WEBPATH +'/'+'/certificateOrigin/specificItems.html" ><span id="specificItems">特殊条款</span></a></dd>';
+	html+='</dl>';
+	html+='</dd>';
+	html+='</dl>';
+	html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/indexV2/productBrand.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">商品品牌</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/productBrandWeb/orderList.html" style="position:relative;"><span id="goodscer">认证订单</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+		html+='<li class="layui-nav-item ">';
+		html+='<a href="javascript:;" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/img/indexV2/landmark.png" style="width:20px">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">地理标志</span>';
+		html+='</a>';
+		html+='<dl class="layui-nav-child">';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/orderList.html" style="position:relative;"><span id="certify">认证订单</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/product/list.html" style="position:relative;"><span id="product">产品管理</span></a></dd>';
+		html+='<dd><a href="'+ WEBPATH +'/'+'/landmarkWeb/vr/list.html" style="position:relative;"><span id="vr">VR管理</span></a></dd>';
+		html+='<dd><a href="'+WEBPATH+'/'+'/landmarkWeb/productTab/list.html" style="position:relative;"><span id="productTab">产品标签管理</span></a></dd>';
+		html+='</dl>';
+		html+='</li>';
+			//双碳业务 begin
+			// html+='<li class="layui-nav-item ">';
+			// html+='<a href="javascript:;" style="text-align:left">';
+			// html+='<img src="'+ WEBPATH +'/img/ycdz.png" style="margin-left:20px;width:20px">';
+			// html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;color:black">绿色低碳认证</span>';
+			// html+='</a>';
+			// html+='<dl class="layui-nav-child">';
+			// html+='<dd><a href="'+WEBPATH+'/'+'/doubleCarbonWeb/list.html" style="position:relative;"><span id="doubleCarbon">业务办理</span><span style="position: absolute;right: 10px;color: #61a4e4;"></span></a></dd>';
+			// html+='</dd>';
+			// html+='</dl>';
+			// html+='</li>';
+		//双碳业务 end
+		html+='<li class="layui-nav-item layui-wjdc" id="question">';
+		html+='<a href="'+ WEBPATH +'/'+'rightMain/replyquestionlist.html" class="layui-new-index-a">';
+		html += '<img src="' + WEBPATH + '/' + '/img/indexV2/question.png" style="width:20px" id="questionImg">';
+		html+='<span style="font-weight:bold;margin-left:20px;font-size:1.1rem;">问卷调查</span>';
+		html+='</a>';
+		html+='</li>';
+		html+='</ul>';
+		html+='</div>';
+		$(".leftDiv").html(html);
+		var html2 = "";
+			html2+='<label class="layui-form-label" style="width: 70%;"><span class="jcxx">基础信息</span></label>';
+			html2+='<div style="position: absolute;top: 14px;padding-left: 19%;">'
+			html2+='<div id="smcount" style="text-align: center;position: absolute;right: -7px;top: -5px;width: 13px;height: 13px;line-height:13px;border-radius: 50%;border: 1px solid #fff;background-color: red;color: #fff;font-size:12px;';
+			html2+=(stationMessageNoReadCount==0?'display:none;':'display:block;')+'">'+stationMessageNoReadCount;
+			html2+='</div><img src="img/indexV2/menu.png" alt="" style="width:25px;cursor: pointer;" onclick="goInforSm()"></div>';
+			html2+='<img id="headpic" src="./img/indexV2/enterprise.png" onerror="javascript:this.src=\''+ WEBPATH +'/'+'img/indexV2/enterprise.png\'" style="margin-left:40%;margin-top: 20px;height: 80px;width: 80px;" />';
+			html2+='<img id="headpic" src="./img/indexV2/vip.png" onerror="javascript:this.src=\''+ WEBPATH +'/'+'img/indexV2/vip.png\'" style="margin-left:34%;margin-top: -12%;height: 25px;width: 130px;" />';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:300px;margin:0 auto;">';
+			html2+='<span style="float:left;color:#344563;text-align:left" >企业名称：</span>';
+			html2+='<span  style="float:right;color:black;width:230px;text-align:center;font-weight:bold;white-space:nowrap">'+getCookie("usercompany")+'</span>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:300px;margin:0 auto;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;text-align:left;" >操作人：</span>';
+			html2+='<span id="userphone" style="float:right;color:black;width:230px;text-align:center;font-weight:bold;">'+getCookie("enterprisename")+'</span>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:300px;margin:0 auto;;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;text-align:left" >待付款：</span>';
+			html2+='<a id="waitPayNum" href="'+WEBPATH+'/newCertificateConsular/paymentrecordsweifu.html"  style="float:right;color:black;width:230px;text-align:center;font-weight:bold;text-decoration:underline !important;cursor:pointer">'+dfk+'</a>';			
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:300px;margin:0 auto;;margin-top:10px">';
+			html2+='<span style="float:left;color:#344563;text-align:left" >待开票：</span>';
+			html2+='<a id="waitOpenTickNum" href="'+WEBPATH+'/newCertificateConsular/waitInvoice.html" style="float:right;color:black;width:230px;text-align:center;font-weight:bold;text-decoration:underline !important;cursor:pointer">'+dkp+'</a>';
+			html2+='</div>';
+			html2+='<div style="color:#222222;font-size: 16px;overflow: hidden;width:300px;margin:0 auto;;margin-top:10px;">';
+			html2+='<div class="layui-form-item" style="background-color:#fde7e7;line-height:30px;border-radius:5px;">';
+			html2+='<span style="float:left;color:#ff182c;text-align:left;" >逾期付款：</span>';
+			html2+='<a id="yuqiNum" href="'+WEBPATH+'/newCertificateConsular/paymentrecordsweifu.html" style="float:left;color:#ff182c;width:230px;text-align:center;font-weight:bold;text-decoration:underline !important;cursor:pointer">'+yq+'</a>';
+			html2+='</div>';
+			html2+='</div>';
+		$(".enterpriseInfo").html(html2);
+	}
+	
+}
+
+//切换企业账户
+function switchEnterprise() {
+	layer.open({
+		type: 2,
+		title: "选择企业账户",
+		area: ["800px", "80%"],
+		fix: false, //不固定
+		skin: 'layui-layer-rim', //加上边框
+		content:   WEBPATH +"/common/chooseEnterprise.html?timestamp=" + new Date().getTime()+"&from=index",
+		btn : [ '取消' ],
+		yes : function(index, layero) { // 确认按钮回调函数
+			layer.close(index);
+		},
+		btn2 : function(index, layero) { // 取消按钮回调函数
+		}
+
+	});
+}
+
+function goInforSm(){
+	window.location.href =  WEBPATH  +"/rightMain/stationMessageList.html";
+}
+
+function getHeader(a) {
+	var loginkey = getCookie("enterprisekey");
+	var count = 0;
+	for(var i = 0; i < localStorage.length; i++) {
+		var localValue = localStorage.getItem(localStorage.key(i));
+		var key = localStorage.key(i);
+		if(key != "visa" && key.indexOf("visa") >= 0) {
+			count++
+		}
+
+	}
+	var count1 = "";
+	if(count == 0) {
+		count1 = ""
+	} else {
+		count1 = "(" + count + ")";
+	}
+
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass15 = "";
+		var layuithisclass20 = "";
+		var layuithisclass21 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2" || a == "12") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3" || a == "20") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		} else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		} else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14" ||a == "8" ) {
+			layuithisclass14 = "layui-this";
+		}else if(a == "15") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "21") {
+			layuithisclass21 = "layui-this";
+		}
+
+	a1 = '<li class="layui-nav-item headernav">\
+			<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass2 + ' headernav">\
+					<a href="#" style="">商事证明</a>\
+					<dl class="layui-nav-child " style="height:auto;width:auto">\
+					 	<dd><a href="' +  WEBPATH  + '/' +'titleCertificate.html" >商事证明书</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' +'company/freesale.html" >自由销售证书</a></dd>\
+					 </dl>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass3 + ' headernav">\
+				<a href="'+WEBPATH+'/'+'countryfilenew.html?tag=LSRZ" style="">领事认证</a>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass21 + ' headernav">\
+					<a href="#" style="">附加证明书</a>\
+					<dl class="layui-nav-child " style="height:auto;width:auto">\
+					 	<dd><a href="' +  WEBPATH  + '/' +'attachmentCertIndex.html?tag=HYRZ" >附加证明书(海牙认证)</a></dd>\
+					 	<dd><a href="' +  WEBPATH  + '/' +'elecattachmentCertIndex.html?tag=DZCDZ" >电子附加证明书(仅限产地证)</a></dd>\
+					 </dl>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass6 + ' headernav">\
+			<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地</a>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass13 + ' headernav">\
+				<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌</a>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass1 + ' headernav">\
+				<a href="#" style="">地标/低碳</a>\
+				<dl class="layui-nav-child " style="height:auto;width:auto">\
+				 	<dd><a href="' +  WEBPATH  + '/' + 'landmarkWeb/landmark.html" target="_blank">地理标志产品</a></dd>\
+					<dd><a href="' +  WEBPATH  + '/' +'doubleCarbonWeb/intro.html" target="_blank">绿色低碳</a></dd>\
+				 </dl>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass10 + ' headernav">\
+				<a href="https://www.eatachina.com/" target="_blank">ATA</a>\
+			</li>\
+			<li class="layui-nav-item headernav" style="">\
+				<a href="https://www.ccpit-fta.com/" target="_blank" style="">FTA</a>\
+			</li>\
+			<li class="layui-nav-item headernav">\
+				<a href="https://www.trustrader.cn/" target="_blank" >信用认证</a>\
+			</li>\
+			<li class="layui-nav-item headernav">\
+				<a href="https://www.investchinaccpit.com/" target="_blank" style="">投资中国</a>\
+			</li>\
+			<li class="layui-nav-item headernav ">\
+				<a href="#" style="">联系我们</a>\
+			 	<dl class="layui-nav-child navlist" style="max-height:160px !important;top:45px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+				 	<dd><a href="'+WEBPATH+'/aboutUs.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">简介</a></dd>\
+					<dd><a href="'+WEBPATH+'/company/organization.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">受理机构</a></dd>\
+					<dd><a href="'+WEBPATH+'/company/concactUs.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">联系电话</a></dd>\
+				 </dl>\
+			</li>\
+			<li class="layui-nav-item ' + layuithisclass5 + '">\
+				<a href="' +  WEBPATH  + '/' + 'index.html">用户登录</a>\
+			</li>';
+	
+	var headerhtml = '<div style="box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;height:92px">\
+			<div id="titleDiv">\
+		<div style="margin: 0 auto;height:100%;position: relative;padding:0 10px;box-sizing:border-box;">\
+			<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+			<ul class="layui-nav headerul" lay-filter="">' + a1 + '</ul>\
+		</div>\
+		</div>\
+	</div>';
+		
+	} else {
+		var city = "";
+		var name = "";
+		var html = "";
+		var userImageUrl =  WEBPATH +"/img/indexV2/yh.png";
+		if(getCookie("logintype")=="user"){
+		var url = COMMONPATH+ "/api/pc/userInfo/select";
+		var formData = new FormData();
+		formData.append("id", getCookie("enterpriseid"));
+		formData.append("admintype", "userpc");
+		formData.append("adminid", getCookie("enterpriseid"));
+		formData.append("adminkey", getCookie("enterprisekey"));
+		formData.append("adminoguid", getCookie("enterpriseoguid"));
+		formData.append("province", getCookie("enterpriseprovince"));
+
+		commonAjaxSubmit(url, formData, "post", false, function(data) {
+			if(data.body.length > 0) {
+					if(data.body[0].enterprise_guid ==""){
+									//没有默认企业
+									name = data.body[0].name;
+								}else{
+									//有默认企业，显示默认企业名称
+									name = data.body[0].companyName;
+								}
+				if(!!data.body[0].head_path){
+					userImageUrl = COMMONPATH + '/upload/head/' + data.body[0].head_path;
+				}
+			}
+			if(data.subbody.length > 0) {
+				city = data.subbody[0].city;
+			}
+		});
+		}else{
+			name=getCookie("usercompany");
+		}
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass15 = "";
+		var layuithisclass20 = "";
+		var layuithisclass21 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		}  else if(a == "2" || a == "12") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		} else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		} else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14" ||a == "8") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "15") {
+			layuithisclass15 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}else if(a == "21") {
+			layuithisclass21 = "layui-this";
+		}
+
+		if(name == "" || name == undefined || name == "undefined") {
+			html = '<a onclick="showLogin()" style="cursor: pointer;">用户登录</a>';
+		} else {
+			/*if(name.length > 6){
+				name = name.slice(0,6) + "...";
+			}*/
+            if(getCookie("logintype")=="user"){
+                html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:160px;"><a href="javascript:void(0)" style="cursor: pointer;width:100%;padding:0 0 !important">\
+                <div style="height:30px;vertical-align:middle;margin-left:30px;"">\
+                <img class="topHeadImg" onerror="javascript:this.src=\''+ WEBPATH +'/'+'/img/phead.png\'" src="' + userImageUrl + '" style="width: 30px;height:30px;float:left;margin-top:16px;border-radius:60px" />\
+                	<span style="width:100px;line-height:30px;background-repeat:no-repeat;display: inline-block;max-width: 100px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;text-align:center;color:black">' + name + '</span><span id="name" style="display:none">' + count1 + '</span></a>\
+                </div>\
+                <dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+		  <dd><a href="' +  WEBPATH  + '/' + 'myCenter.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:45px;line-height:45px;">账户中心</a></dd>\
+		  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:45px;line-height:45px;">退出登录</a></dd>\
+	    </dl></li>';
+            }else if(getCookie("logintype")=="company"){
+                html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:260px">\
+                <a href="javascript:void(0)" style="margin-left: 10px;margin-top:10px;border-radius: 10px;line-height: 40px;background-color: #fadfaf;cursor: pointer;box-sizing:border-box;text-align:center;min-width:120px;float:left;">\
+                	<img src=\''+ WEBPATH +'/'+'/img/indexV2/enterpriseVip.png\'" style="float:left;margin-top:8px;height:25px;"/>\
+					<span style="color:#8b552e;margin-left:10px;max-width:150px;display: inline-block;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: top;">' + name +'</span>\
+                </a>\
+                	<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+                		<dd><a href="' +  WEBPATH  + '/' + 'myindex.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:45px;line-height:45px;">账户中心</a></dd>\
+                		<dd></dd>\
+                		<dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:45px;line-height:45px;">退出登录</a></dd>\
+                	</dl></li>';
+            }
+		}
+		a1 = '<li class="layui-nav-item headernav">\
+					<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass2 + ' headernav">\
+						<a href="#" >商事证明</a>\
+						<dl class="layui-nav-child " style="width:120px;height:auto;width:auto">\
+						 	<dd><a href="' +  WEBPATH  + '/' +'titleCertificate.html" >商事证明书</a></dd>\
+							<dd><a href="' +  WEBPATH  + '/' +'company/freesale.html" >自由销售证书</a></dd>\
+						 </dl>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass3 + ' headernav">\
+						<a href="'+WEBPATH+'/'+'countryfilenew.html?tag=LSRZ" style="">领事认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass21 + ' headernav">\
+							<a href="#" style="">附加证明书</a>\
+							<dl class="layui-nav-child " style="height:auto;width:auto">\
+							 	<dd><a href="' +  WEBPATH  + '/' +'attachmentCertIndex.html?tag=HYRZ" >附加证明书(海牙认证)</a></dd>\
+							 	<dd><a href="' +  WEBPATH  + '/' +'elecattachmentCertIndex.html?tag=DZCDZ" >电子附加证明书(仅限产地证)</a></dd>\
+							 </dl>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass6 + ' headernav">\
+						<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地</a>\
+						</li>\
+						<li class="layui-nav-item ' + layuithisclass13 + ' headernav">\
+							<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌</a>\
+						</li>\
+					<li class="layui-nav-item ' + layuithisclass1 + ' headernav">\
+						<a href="#" style="">地标/低碳</a>\
+						<dl class="layui-nav-child " style="width:auto;height:auto">\
+						 	<a href="' +  WEBPATH  + '/' + 'landmarkWeb/landmark.html" target="_blank">地理标志产品</a>\
+							<dd><a href="' +  WEBPATH  + '/' +'doubleCarbonWeb/intro.html" target="_blank">绿色低碳</a></dd>\
+						 </dl>\
+					</li>\
+						<li class="layui-nav-item headernav">\
+							<a href="https://www.eatachina.com/" target="_blank">ATA</a>\
+						</li>\
+						<li class="layui-nav-item headernav" style="">\
+							<a href="https://www.ccpit-fta.com/" target="_blank" style="">FTA</a>\
+						</li>\
+						<li class="layui-nav-item headernav">\
+							<a href="https://www.trustrader.cn/" target="_blank" >信用认证</a>\
+						</li>\
+						<li class="layui-nav-item headernav">\
+							<a href="https://www.investchinaccpit.com/" target="_blank" >投资中国</a>\
+						</li>\
+						<li class="layui-nav-item ' + layuithisclass14 + ' headernav">\
+							<a href="#" style="">联系我们</a>\
+						 	<dl class="layui-nav-child navlist" style="max-height:160px !important;top:45px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+							 	<dd><a href="'+WEBPATH+'/aboutUs.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff !important;border-bottom:1px solid #dedede;display:block;height:40px;line-height:40px;">简介</a></dd>\
+								<dd><a href="'+WEBPATH+'/company/organization.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff !important;display:block;height:45px;line-height:45px;">受理机构</a></dd>\
+								<dd><a href="'+WEBPATH+'/company/concactUs.html" style="cursor:pointer;padding-left:0px;color: black;background-color: #fff !important;display:block;height:45px;line-height:45px;">联系电话</a></dd>\
+							 </dl>\
+						</li>' + html;
+		
+			var tips = "";
+			if(getCookie("enterpriseprovince") == null || getCookie("enterpriseprovince") == "null" || city == null || city == "null" || getCookie("enterpriseoname") == null || getCookie("enterpriseoname") == "null") {
+				tips = "";
+			} else {
+				/*tips = '<div style="width: 450px;height: 25px;position: absolute;top: 57px;left: 110px;text-align: left;display: flex;flex-direction: row;justify-content: flex-start;">\
+							<div style="display: flex;flex-direction: row;align-items: center;cursor:pointer;"onclick="toMyInfo()">\
+								<span style="color: #535353;">' + getCookie("enterpriseprovince") + '</span>&ensp;\
+								<span style="color: #535353;">' + city + '</span>&ensp;\
+								<span style="color: #535353;">递送机构:&nbsp;</span><span style="color: #535353;">' + (getCookie("enterpriseoname").length >= 15 ? getCookie("enterpriseoname").substr(0, 15) + "..." : getCookie("enterpriseoname")) + '</span>&emsp;\
+							</div>\
+						</div>';*/
+			}
+			var headerhtml ="";
+			 if(getCookie("logintype")=="user"){
+				 headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+						<div id="titleDiv">\
+				<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+					<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+				</div>\
+				</div>\
+			</div>';
+			 }else if(getCookie("logintype")=="company"){
+				 headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+						<div id="titleDiv">\
+				<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+					<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+				</div>\
+				</div>\
+			</div>';
+			 }
+		
+		}
+		
+		return headerhtml;
+}
+
+function getHeadersmall(a) {
+	var loginkey = getCookie("enterprisekey");
+	var count = 0;
+	for(var i = 0; i < localStorage.length; i++) {
+		var localValue = localStorage.getItem(localStorage.key(i));
+		var key = localStorage.key(i);
+		if(key != "visa" && key.indexOf("visa") >= 0) {
+			count++
+		}
+
+	}
+	var count1 = "";
+	if(count == 0) {
+		count1 = ""
+	} else {
+		count1 = "(" + count + ")";
+	}
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass15 = "";
+		var layuithisclass20 = "";
+		var layuithisclass21 = "";
+	if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2" || a == "12") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3" || a == "20") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		} else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		} else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "8") {
+			layuithisclass8 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "15") {
+			layuithisclass15 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}else if(a == "21") {
+			layuithisclass21 = "layui-this";
+		}
+
+		a1 = '<li class="layui-nav-item headernav">\
+				<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass2 + ' headernav">\
+					<a href="#" style="">商事证明</a>\
+					<dl class="layui-nav-child " style="width:150px">\
+					 	<dd><a href="' +  WEBPATH  + '/' +'titleCertificate.html" >商事证明</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' +'company/freesale.html" >自由销售证书</a></dd>\
+					 </dl>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass3 + ' headernav">\
+					<a href="'+WEBPATH+'/'+'countryfilenew.html?tag=LSRZ" style="">领事认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass21 + ' headernav">\
+						<a href="#" style="">附加证明书</a>\
+						<dl class="layui-nav-child " style="height:auto;width:auto">\
+						 	<dd><a href="' +  WEBPATH  + '/' +'attachmentCertIndex.html?tag=HYRZ" >附加证明书(海牙认证)</a></dd>\
+						 	<dd><a href="' +  WEBPATH  + '/' +'elecattachmentCertIndex.html?tag=DZCDZ" >电子附加证明书(仅限产地证)</a></dd>\
+						 </dl>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass6 + ' headernav">\
+					<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass13 + ' headernav">\
+						<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌</a>\
+					</li>\
+				<li class="layui-nav-item ' + layuithisclass1 + ' headernav">\
+					<a href="#" style="">地标/低碳</a>\
+					<dl class="layui-nav-child " style="width:120px">\
+					 	<a href="' +  WEBPATH  + '/' + 'landmarkWeb/landmark.html" target="_blank">地理标志产品</a>\
+						<dd><a href="' +  WEBPATH  + '/' +'doubleCarbonWeb/intro.html" target="_blank">绿色低碳</a></dd>\
+					 </dl>\
+				</li>\
+				<li class="headernav layui-nav-item ' + layuithisclass8+' ' + layuithisclass1+' '+layuithisclass9+' '+layuithisclass10+' '+layuithisclass11+' '+layuithisclass14 + ' ">\
+					<a href="javascript:;">其他\
+					<dl class="layui-nav-child " style="width:120px;max-height:250px !important;height:auto">\
+						<dd><a href="https://www.eatachina.com/" target="_blank">ATA</a></dd>\
+						<dd><a href="https://www.ccpit-fta.com/" target="_blank" style="">FTA</a></dd>\
+						<dd><a href="https://www.trustrader.cn/" target="_blank">信用认证</a></dd>\
+						<dd><a href="https://www.investchinaccpit.com/" target="_blank" >投资中国</a></dd>\
+						<dd><a href="'+WEBPATH+'/aboutUs.html" target="_blank" >简介</a></dd>\
+						<dd><a href="'+WEBPATH+'/company/organization.html" target="_blank" >受理机构</a></dd>\
+						<dd><a href="'+WEBPATH+'/company/concactUs.html">联系电话</a></dd>\
+					</dl></li>\
+				<li class="layui-nav-item ' + layuithisclass5 + '">\
+					<a href="' +  WEBPATH  + '/' + 'index.html">用户登录</a>\
+				</li>';
+		
+		var headerhtml = '<div style="box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;height:92px">\
+				<div id="titleDiv">\
+			<div style="width: 95%;margin: 0 auto;height:100%;position: relative;padding:0 10px;box-sizing:border-box;">\
+				<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+				<ul class="layui-nav headerul" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+		
+	} else {
+		var city = "";
+		var name = "";
+		var html = "";
+		var userImageUrl =  WEBPATH +"/img/indexV2/yh.png";
+		if(getCookie("logintype")=="user"){
+		var url =COMMONPATH + "/api/pc/userInfo/select";
+		var formData = new FormData();
+
+		formData.append("id", getCookie("enterpriseid"));
+		formData.append("admintype", "userpc");
+		formData.append("adminid", getCookie("enterpriseid"));
+		formData.append("adminkey", getCookie("enterprisekey"));
+		formData.append("adminoguid", getCookie("enterpriseoguid"));
+		formData.append("province", getCookie("enterpriseprovince"));
+
+		commonAjaxSubmit(url, formData, "post", false, function(data) {
+			if(data.body.length > 0) {
+				if(data.body[0].enterprise_guid ==""){
+								//没有默认企业
+								name = data.body[0].name;
+							}else{
+								//有默认企业，显示默认企业名称
+								name = data.body[0].companyName;
+							}
+				if(!!data.body[0].head_path){
+					userImageUrl = COMMONPATH + '/upload/head/' + data.body[0].head_path;
+				}
+			}
+			if(data.subbody.length > 0) {
+				city = data.subbody[0].city;
+			}
+		});
+		}else{
+			name=getCookie("usercompany");
+		}
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass15 = "";
+		var layuithisclass20 = "";
+		var layuithisclass21 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2" || a == "12") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		} else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		} else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "8") {
+			layuithisclass8 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "15") {
+			layuithisclass15 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}else if(a == "21") {
+			layuithisclass21 = "layui-this";
+		}
+
+		if(name == "" || name == undefined || name == "undefined") {
+			html = '<a onclick="showLogin()" style="cursor: pointer;">会员登录</a>';
+		} else {
+			/*if(name.length > 6){
+				name = name.slice(0,6) + "...";
+			}*/
+            if(getCookie("logintype")=="user"){
+              /*  html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:130px"><a href="javascript:void(0)" style="cursor: pointer;min-width:120px;box-sizing:border-box;text-align:center;padding: 0px 20px!important;"><img class="topHeadImg" onerror="javascript:this.src=\''+COMMONPATH+'/'+'/img/phead.png\'" src="' + userImageUrl + '" style="width: 30px;margin-right:5px;border-radius:30px;vertical-align: middle;" /><span style="display: inline-block;max-width: 120px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;">' + name + '</span><span id="name" style="display:none">' + count1 + '</span></a>\
+		<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+		  <dd><a href="' + COMMONPATH + '/' + 'myCenter.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+		    <dd><a  href="javascript:void(0)"  onclick="switchEnterpriseTwo()" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">切换企业账户</a></dd>\
+		  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+	    </dl></li>';*/
+            	  html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:160px;"><a href="javascript:void(0)" style="cursor: pointer;width:100%;padding:0 0 !important">\
+                  <div style="height:30px;vertical-align:middle;margin-left:20px;">\
+                  <img class="topHeadImg" onerror="javascript:this.src=\''+ WEBPATH +'/'+'/img/phead.png\'" src="' + userImageUrl + '" style="width: 30px;height:30px;float:left;margin-top:16px;border-radius:60px" />\
+                  	<span style="width:110px;line-height:30px;display: inline-block;max-width: 130px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;text-align:center;color:black">' + name + '</span><span id="name" style="display:none">' + count1 + '</span></a>\
+                  </div>\
+                  <dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+  		  <dd><a href="' +  WEBPATH  + '/' + 'myCenter.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+  		    <dd></dd>\
+  		  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+  	    </dl></li>';
+            }else if(getCookie("logintype")=="company"){
+            	 html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:235px">\
+                 <a href="javascript:void(0)" style="border-radius: 10px;line-height: 40px;background-color:#fadfaf;margin-top:10px;float:left;cursor: pointer;min-width:120px;box-sizing:border-box;text-align:center;padding: 0px 20px!important;">\
+                 	<img src=\''+ WEBPATH +'/'+'/img/indexV2/enterpriseVip.png\'" style="float:left;margin-top:8px;height:25px;"/>\
+					<span style="color:#8b552e;max-width:150px;display: inline-block;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: top;">' + name +'</span>\
+                 </a>\
+                 	<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+                 		<dd><a href="' +  WEBPATH  + '/' + 'myindex.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+                 		<dd></dd>\
+                 		<dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+                 	</dl></li>';
+            }
+		}
+		a1 = '<li class="layui-nav-item headernav">\
+					<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass2 + ' headernav">\
+						<a href="#" style="">商事证明</a>\
+						<dl class="layui-nav-child " style="width:120px">\
+						 	<dd><a href="' +  WEBPATH  + '/' +'titleCertificate.html" >商事证明</a></dd>\
+							<dd><a href="' +  WEBPATH  + '/' +'company/freesale.html" >自由销售证书</a></dd>\
+						 </dl>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass3 + ' headernav">\
+						<a href="'+WEBPATH+'/'+'countryfilenew.html?tag=LSRZ" style="">领事认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass21 + ' headernav">\
+							<a href="#" style="">附加证明书</a>\
+							<dl class="layui-nav-child " style="height:auto;width:auto">\
+							 	<dd><a href="' +  WEBPATH  + '/' +'attachmentCertIndex.html?tag=HYRZ" >附加证明书(海牙认证)</a></dd>\
+								<dd><a href="' +  WEBPATH  + '/' +'elecattachmentCertIndex.html?tag=DZCDZ" >电子附加证明书(仅限产地证)</a></dd>\
+							 </dl>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass6 + ' headernav">\
+						<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地</a>\
+						</li>\
+						<li class="layui-nav-item ' + layuithisclass13 + ' headernav">\
+							<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌</a>\
+						</li>\
+					<li class="layui-nav-item ' + layuithisclass1 + ' headernav">\
+						<a href="#" style="">地标/低碳</a>\
+						<dl class="layui-nav-child " style="width:120px">\
+						 	<a href="' +  WEBPATH  + '/' + 'landmarkWeb/landmark.html" target="_blank">地理标志产品</a>\
+							<dd><a href="' +  WEBPATH  + '/' +'doubleCarbonWeb/intro.html" target="_blank">绿色低碳</a></dd>\
+						 </dl>\
+					</li>\
+					<li class="headernav layui-nav-item ' + layuithisclass8+' ' + layuithisclass1+' '+layuithisclass9+' '+layuithisclass10+' '+layuithisclass11+' '+layuithisclass14 + ' ">\
+						<a href="javascript:;">其他\
+						<dl class="layui-nav-child " style="width:120px;max-height:250px !important;height:auto">\
+							<dd><a href="https://www.eatachina.com/" target="_blank">ATA</a></dd>\
+							<dd><a href="https://www.ccpit-fta.com/" target="_blank" style="">FTA</a></dd>\
+							<dd><a href="https://www.trustrader.cn/" target="_blank">信用认证</a></dd>\
+							<dd><a href="https://www.investchinaccpit.com/" target="_blank" >投资中国</a></dd>\
+							<dd><a href="'+WEBPATH+'/aboutUs.html" target="_blank" >简介</a></dd>\
+						    <dd><a href="'+WEBPATH+'/company/organization.html" target="_blank" >受理机构</a></dd>\
+						    <dd><a href="'+WEBPATH+'/company/concactUs.html">联系电话</a></dd>\
+						</dl>\
+						</li>' + html;
+		
+			var tips = "";
+			if(getCookie("enterpriseprovince") == null || getCookie("enterpriseprovince") == "null" || city == null || city == "null" || getCookie("enterpriseoname") == null || getCookie("enterpriseoname") == "null") {
+				tips = "";
+			} else {
+				/*tips = '<div style="width: 450px;height: 25px;position: absolute;top: 57px;left: 110px;text-align: left;display: flex;flex-direction: row;justify-content: flex-start;">\
+							<div style="display: flex;flex-direction: row;align-items: center;cursor:pointer;"onclick="toMyInfo()">\
+								<span style="color: #535353;">' + getCookie("enterpriseprovince") + '</span>&ensp;\
+								<span style="color: #535353;">' + city + '</span>&ensp;\
+								<span style="color: #535353;">递送机构:&nbsp;</span><span style="color: #535353;">' + (getCookie("enterpriseoname").length >= 15 ? getCookie("enterpriseoname").substr(0, 15) + "..." : getCookie("enterpriseoname")) + '</span>&emsp;\
+							</div>\
+						</div>';*/
+			}
+			var headerhtml ="";
+			 if(getCookie("logintype")=="user"){
+				 headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+						<div id="titleDiv">\
+				<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+					<ul class="layui-nav headerul" lay-filter="">' + a1 + '</ul>\
+				</div>\
+				</div>\
+			</div>';
+			 }else if(getCookie("logintype")=="company"){
+				 headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+						<div id="titleDiv">\
+				<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + '/img/zgmchssrzpt.png" style="margin-top: 20px; width: 351px;cursor: pointer;float: left;margin-left:30px" onclick="toIndex()" />\
+					<ul class="layui-nav headerul" lay-filter="" style="padding:0 0 !important;">' + a1 + '</ul>\
+				</div>\
+				</div>\
+			</div>';
+			 }
+		
+		}
+		
+		return headerhtml;
+}
+function getFooter() {
+	var foothtml = '<div style="width: 1200px;margin: 0 auto;">\
+				<div style="width: 700px;float: left;text-align: left;line-height: 25px;margin-top: 5px;">\
+					<div style="width: 200px;margin-top: 10px;padding-left: 20px;float: left;">\
+						<div style="margin-top: 5px;">\
+							<img src="' +  WEBPATH  + '/' + '/img/wz.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">rzzx@ccpit.org</span>\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<img src="' +  WEBPATH  + '/' + '/img/xx.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">100035</span>\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<img src="' +  WEBPATH  + '/' + '/img/wz.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">廉政监督邮箱</span>\
+						</div>\
+					</div>\
+					<div style="width: 465px;margin-top: 10px;float: left;">\
+						<div style="margin-top: 5px;">\
+							<span style=" color: #FFFFFF;">技术支持：</span>\
+							<a href="http://www.jhs-sys.com/" target="_blank " style="color: #000000; "><span style="color: #FFFFFF; ">江苏海隆华思计算机系统有限公司</span></a>&emsp;\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<a href="http://beian.miit.gov.cn/publish/query/indexFirst.action" target="_blank" style="color: #FFFFFF;">京ICP备18003462号-2</a>&nbsp;&nbsp;\
+						    <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010202008111" target="_blank" style="color: #FFFFFF;"><img src="' +  WEBPATH  + '/' + '/img/gaba.png" style="width: 15px;margin-top: -2px; " />京公安网备 11010202008111号</a>\
+							<a href="' +  WEBPATH  + '/' + '/mianze/mianze.html" target="_blank" style="color:white">【免责声明】</a>\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<span style="color: #FFFFFF;">mtjiandu@ccpit.org</span>\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<span style="color: #FFFFFF;">版权所有：中国国际贸易促进委员会贸易推广交流中心</span>\
+						</div>\
+						<div style="margin-top: 5px;">\
+							<span style="color: #FFFFFF;">地址：北京市西城区桦皮厂胡同2号国际商会大厦3层</span>\
+						</div>\
+					</div>\
+				</div>\
+				<div style="width: 90px;float: right;text-align: center;">\
+					<img src="' +  WEBPATH  + '/' + 'img/home/zhongguomaocusp.png" style="width: 60px;height: 60px;margin-top: 55px;" /><br />\
+					<span style="color:white;font-size:0.8rem">中国贸促视频号</span>\
+				</div>\
+				<div style="width: 90px;float: right;text-align: center; ">\
+					<img src="' +  WEBPATH  + '/' + 'img/home/zhongguomaocu.png" style="width: 60px;height: 60px;margin-top: 55px; " /><br />\
+					<span style="color:white;font-size:0.8rem">中国贸促公众号</span>\
+				</div>\
+			</div>';
+
+	return foothtml;
+}
+
+function getHeader1(a) {
+	var loginkey = getCookie("enterprisekey");
+	var count = 0;
+	for(var i = 0; i < localStorage.length; i++) {
+		var localValue = localStorage.getItem(localStorage.key(i));
+		var key = localStorage.key(i);
+		if(key != "visa" && key.indexOf("visa") >= 0) {
+			count++
+		}
+	}
+	var count1 = "";
+	if(count == 0) {
+		count1 = ""
+	} else {
+		count1 = "(" + count + ")";
+	}
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass20 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		}else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		}else if(a == "7"){
+			layuithisclass7 = "layui-this";
+		}else if(a == "8"){
+			layuithisclass8 = "layui-this";
+		}else if(a == "9"){
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}
+
+		a1 = '<li class="layui-nav-item ' + layuithisclass1 + '">\
+						<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+				<li class="layui-nav-item ' + layuithisclass6 + '">\
+				<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass2 + '">\
+					<a href="' +  WEBPATH  + '/' + 'titleCertificate.html">商事证明书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass12 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/freesale.html">自由销售证书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass13 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌证书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass3 + '">\
+					<a href="' +  WEBPATH  + '/' + 'countryfilenew.html?tag=LSRZ">领事认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass20 + '">\
+					<a href="' +  WEBPATH  + '/' + 'attachmentCertIndex.html?tag=HYRZ">海牙认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass7 + '">\
+				<a href="' +  WEBPATH  + '/' + 'middleEastCertificate.html"  style="display:none;">中东自由销售证明书</a>\
+		    	</li>\
+				<li class="layui-nav-item ' + layuithisclass4 + '">\
+					<a href="' +  WEBPATH  + '/' + 'visacontrychoose.html" style="display:none;">签证服务</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass8 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/organization.html">受理机构</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass9 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/commonproblem.html">常见问题</a>\
+				</li>\
+				<li class="layui-nav-item">\
+					<a href="https://www.eatachina.com/" target="_blank">ATA</a>\
+				</li>\
+				<li class="layui-nav-item ">\
+					<a href="https://www.trustrader.cn/" target="_blank">信用认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass14 + '">\
+					<a href="' +  WEBPATH  + '/' + 'aboutUs.html">关于我们</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass5 + '" style="width:130px">\
+					<a href="' +  WEBPATH  + '/' + 'index.html">会员登录</a>\
+				</li>';
+
+		var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+				<div id="titleDiv">\
+			<div style="width: 95%;margin: 0 auto;height:100%;position: relative;padding:0 10px;box-sizing:border-box;">\
+				<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+	} else {
+		var city = "";
+		var name = "";
+		var html = "";
+		var userImageUrl =  WEBPATH +"/img/phead.png";
+		if(getCookie("logintype")=="user"){
+			var url = COMMONPATH + "/api/pc/userInfo/select";
+			var formData = new FormData();
+			formData.append("id", getCookie("enterpriseid"));
+			formData.append("admintype", "userpc");
+			formData.append("adminid", getCookie("enterpriseid"));
+			formData.append("adminkey", getCookie("enterprisekey"));
+			formData.append("adminoguid", getCookie("enterpriseoguid"));
+			formData.append("province", getCookie("enterpriseprovince"));
+
+			commonAjaxSubmit(url, formData, "post", false, function(data) {
+				if(data.body.length > 0) {
+					name = data.body[0].name;
+					if(!!data.body[0].head_path){
+						userImageUrl = COMMONPATH + '/upload/head/' + data.body[0].head_path;
+					}
+				}
+				if(data.subbody.length > 0) {
+					city = data.subbody[0].city;
+				}
+			});
+		}else{
+			name=getCookie("usercompany");
+		}
+		
+
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass20 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		}else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		}else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "8") {
+			layuithisclass8 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}
+		if(name == "" || name == undefined || name == "undefined") {
+			html = '<a onclick="showLogin()" style="cursor: pointer;">会员登录</a>';
+		} else {
+			/*if(name.length > 6){
+				name = name.slice(0,6) + "...";
+			}*/
+			 if(getCookie("logintype")=="user"){
+				  html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:160px;"><a href="javascript:void(0)" style="cursor: pointer;width:100%;padding:0 0 !important">\
+	                <div style="height:30px;vertical-align:middle"">\
+	                <img class="topHeadImg" onerror="javascript:this.src=\''+ WEBPATH +'/'+'/img/phead.png\'" src="' + userImageUrl + '" style="width: 30px;height:30px;float:left;padding-top:16px" />\
+	                	<span style="width:130px;line-height:30px;background-image:url(' +  WEBPATH  + '/' + 'img/txmk.png);background-repeat:no-repeat;display: inline-block;max-width: 130px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;text-align:center">' + name + '</span><span id="name" style="display:none">' + count1 + '</span></a>\
+	                </div>\
+	                <dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+			  <dd><a href="' +  WEBPATH  + '/' + 'myCenter.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+			    <dd></dd>\
+			  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+		    </dl></li>';
+	            }else if(getCookie("logintype")=="company"){
+	                html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:230px"><img src="'+ WEBPATH +'/img/biao.png" style="float:left;margin-top:15px"><a href="javascript:void(0)" style="float:left;cursor: pointer;max-width:190px;;min-width:120px;box-sizing:border-box;text-align:center;"><span style="margin-left:-15px;max-width:190px;display: inline-block;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;">' + name + '</span></a>\
+			<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+			  <dd><a href="' +  WEBPATH  + '/' + 'myindex.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+			   <dd></dd>\
+			  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+		    </dl></li>';
+	            }
+		}
+		a1 = '<li class="layui-nav-item ' + layuithisclass1 + '">\
+						<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass6 + '">\
+					<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass2 + '">\
+						<a href="' +  WEBPATH  + '/' + 'titleCertificate.html">商事证明书</a>\
+					<li class="layui-nav-item ' + layuithisclass12 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/freesale.html">自由销售证书</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass13 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌证书</a>\
+					</li>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass3 + '">\
+						<a href="' +  WEBPATH  + '/' + 'countryfilenew.html?tag=LSRZ">领事认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass20 + '">\
+						<a href="' +  WEBPATH  + '/' + 'attachmentCertIndex.html?tag=HYRZ">海牙认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass7 + '">\
+					<a href="' +  WEBPATH  + '/' + 'middleEastCertificate.html"  style="display:none;">中东自由销售证明书</a>\
+			    	</li>\
+					<li class="layui-nav-item ' + layuithisclass4 + '">\
+						<a href="' +  WEBPATH  + '/' + 'visacontrychoose.html" style="display:none;">签证服务</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass8 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/organization.html">受理机构</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass9 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/commonproblem.html">常见问题</a>\
+					</li>\
+					<li class="layui-nav-item ">\
+						<a href="https://www.eatachina.com/" target="_blank">ATA</a>\
+					</li>\
+					<li class="layui-nav-item ">\
+						<a href="https://www.trustrader.cn/" target="_blank">信用认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass14 + '">\
+						<a href="' +  WEBPATH  + '/' + 'aboutUs.html">关于我们</a>\
+					</li>' + html;
+
+		var tips = "";
+		if(getCookie("enterpriseprovince") == null || getCookie("enterpriseprovince") == "null" || city == null || city == "null" || getCookie("enterpriseoname") == null || getCookie("enterpriseoname") == "null") {
+			tips = "";
+		} else {
+			/*tips = '<div style="width: 450px;height: 25px;position: absolute;top: 57px;left: 100px;text-align: left;display: flex;flex-direction: row;justify-content: flex-start;">\
+						<div style="display: flex;flex-direction: row;align-items: center;cursor:pointer;"onclick="toMyInfo1()">\
+							<span style="color: #535353;">' + getCookie("enterpriseprovince") + '</span>&ensp;\
+							<span style="color: #535353;">' + city + '</span>&ensp;\
+							<span style="color: #535353;">受理机构:&nbsp;</span><span style="color: #535353;">' + (getCookie("enterpriseoname").length >= 15 ? getCookie("enterpriseoname").substr(0, 15) + "..." : getCookie("enterpriseoname")) + '</span>&emsp;\
+						</div>\
+					</div>';*/
+		}
+
+		var headerhtml="";
+		 if(getCookie("logintype")=="user"){
+			/* var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+					<div id="titleDiv">\
+			<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="img/zgmchssrzpt.png" onerror="javascript:this.src=\''+COMMONPATH+'/'+'/img/phead.png\'" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" /><img title="切换企业账户" src="'+COMMONPATH+'/img/qiehuanblue.png" style="cursor:pointer;margin-top:40px;float:right;margin-right:40px" onclick="switchEnterprise()">\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';*/
+			 headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+					<div id="titleDiv">\
+			<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+		 }else if(getCookie("logintype")=="company"){
+			 var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+					<div id="titleDiv">\
+			<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+		 }
+		
+	}
+
+	return headerhtml;
+}
+
+function getHeader1small(a) {
+	var loginkey = getCookie("enterprisekey");
+
+	var count = 0;
+	for(var i = 0; i < localStorage.length; i++) {
+		var localValue = localStorage.getItem(localStorage.key(i));
+		var key = localStorage.key(i);
+		if(key != "visa" && key.indexOf("visa") >= 0) {
+			count++
+		}
+	}
+	var count1 = "";
+	if(count == 0) {
+		count1 = ""
+	} else {
+		count1 = "(" + count + ")";
+	}
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass20 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		}else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		}else if(a == "7"){
+			layuithisclass7 = "layui-this";
+		}else if(a == "8"){
+			layuithisclass8 = "layui-this";
+		}else if(a == "9"){
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}
+
+		a1 = '<li class="layui-nav-item ' + layuithisclass1 + '">\
+						<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+				<li class="layui-nav-item ' + layuithisclass6 + '">\
+				<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass2 + '">\
+					<a href="' +  WEBPATH  + '/' + 'titleCertificate.html">商事证明书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass12 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/freesale.html">自由销售证书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass13 + '">\
+					<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌证书</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass3 + '">\
+					<a href="' +  WEBPATH  + '/' + 'countryfilenew.html?tag=LSRZ">领事认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass20 + '">\
+					<a href="' +  WEBPATH  + '/' + 'attachmentCertIndex.html?tag=HYRZ">海牙认证</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass7 + '">\
+				<a href="' +  WEBPATH  + '/' + 'middleEastCertificate.html"  style="display:none;">中东自由销售证明书</a>\
+		    	</li>\
+				<li class="layui-nav-item ' + layuithisclass4 + '">\
+					<a href="' +  WEBPATH  + '/' + 'visacontrychoose.html" style="display:none;">签证服务</a>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass8+' '+layuithisclass9+' '+layuithisclass10+' '+layuithisclass11+' '+layuithisclass14 + '">\
+					<a href="javascript:;">其他\
+					<dl class="layui-nav-child " style="width:100px">\
+						<dd><a href="' +  WEBPATH  + '/' + 'company/organization.html">受理机构</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' + 'company/commonproblem.html">常见问题</a></dd>\
+						<dd><a href="https://www.eatachina.com/" target="_blank">ATA</a></dd>\
+						<dd><a href="https://www.trustrader.cn/" target="_blank">信用认证</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' + 'aboutUs.html">关于我们</a></dd>\
+					</dl>\
+				</li>\
+				<li class="layui-nav-item ' + layuithisclass5 + '" style="width:130px">\
+					<a href="' +  WEBPATH  + '/' + 'index.html">会员登录</a>\
+				</li>';
+
+		var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+				<div id="titleDiv">\
+			<div style="width: 95%;margin: 0 auto;height:100%;position: relative;padding:0 10px;box-sizing:border-box;">\
+				<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+	} else {
+		var city = "";
+		var name = "";
+		var html = "";
+		var userImageUrl =  WEBPATH  +"/img/phead.png";
+		if(getCookie("logintype")=="user"){
+			var url = COMMONPATH + "/api/pc/userInfo/select";
+			var formData = new FormData();
+			formData.append("id", getCookie("enterpriseid"));
+			formData.append("admintype", "userpc");
+			formData.append("adminid", getCookie("enterpriseid"));
+			formData.append("adminkey", getCookie("enterprisekey"));
+			formData.append("adminoguid", getCookie("enterpriseoguid"));
+			formData.append("province", getCookie("enterpriseprovince"));
+
+			commonAjaxSubmit(url, formData, "post", false, function(data) {
+				if(data.body.length > 0) {
+					name = data.body[0].name;
+					if(!!data.body[0].head_path){
+						userImageUrl = COMMONPATH + '/upload/head/' + data.body[0].head_path;
+					}
+				}
+				if(data.subbody.length > 0) {
+					city = data.subbody[0].city;
+				}
+			});
+		}else{
+			name=getCookie("usercompany");
+		}
+		
+
+		var a1 = '';
+
+		var layuithisclass1 = "";
+		var layuithisclass2 = "";
+		var layuithisclass3 = "";
+		var layuithisclass4 = "";
+		var layuithisclass5 = "";
+		var layuithisclass6 = "";
+		var layuithisclass7 = "";
+		var layuithisclass8 = "";
+		var layuithisclass9 = "";
+		var layuithisclass10 = "";
+		var layuithisclass11 = "";
+		var layuithisclass12 = "";
+		var layuithisclass13 = "";
+		var layuithisclass14 = "";
+		var layuithisclass20 = "";
+		if(a == "1") {
+			layuithisclass1 = "layui-this";
+		} else if(a == "2") {
+			layuithisclass2 = "layui-this";
+		} else if(a == "3") {
+			layuithisclass3 = "layui-this";
+		} else if(a == "4") {
+			layuithisclass4 = "layui-this";
+		} else if(a == "5") {
+			layuithisclass5 = "layui-this";
+		}else if(a == "6") {
+			layuithisclass6 = "layui-this";
+		}else if(a == "7") {
+			layuithisclass7 = "layui-this";
+		}else if(a == "8") {
+			layuithisclass8 = "layui-this";
+		}else if(a == "9") {
+			layuithisclass9 = "layui-this";
+		}else if(a == "10") {
+			layuithisclass10 = "layui-this";
+		}else if(a == "11") {
+			layuithisclass11 = "layui-this";
+		}else if(a == "12") {
+			layuithisclass12 = "layui-this";
+		}else if(a == "13") {
+			layuithisclass13 = "layui-this";
+		}else if(a == "14") {
+			layuithisclass14 = "layui-this";
+		}else if(a == "20") {
+			layuithisclass20 = "layui-this";
+		}
+		if(name == "" || name == undefined || name == "undefined") {
+			html = '<a onclick="showLogin()" style="cursor: pointer;">会员登录</a>';
+		} else {
+			/*if(name.length > 6){
+				name = name.slice(0,6) + "...";
+			}*/
+			 if(getCookie("logintype")=="user"){
+	                html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:130px"><a href="javascript:void(0)" style="cursor: pointer;min-width:120px;box-sizing:border-box;text-align:center;padding: 0px 20px!important;"><img class="topHeadImg"   onerror="javascript:this.src=\''+COMMONPATH+'/'+'/img/phead.png\'"  src="' + userImageUrl + '" style="width: 30px;height:30px;margin-right:5px;border-radius:30px;vertical-align: middle;" /><span style="display: inline-block;max-width: 120px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;">' + name + '</span><span id="name" style="display:none">' + count1 + '</span></a>\
+			<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+			  <dd><a href="' +  WEBPATH  + '/' + 'myCenter.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+			    <dd></dd>\
+			  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+		    </dl></li>';
+	            }else if(getCookie("logintype")=="company"){
+	                html = '<li class="layui-nav-item ' + layuithisclass5 + '" style="width:230px"><img src="'+ WEBPATH +'/img/biao.png" style="float:left;margin-top:15px"><a href="javascript:void(0)" style="float:left;cursor: pointer;max-width:190px;;min-width:120px;box-sizing:border-box;text-align:center;"><span style="margin-left:-15px;max-width:190px;display: inline-block;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;vertical-align: middle;">' + name + '</span></a>\
+			<dl class="layui-nav-child" style="top:60px;left:0px;width:100%;text-align:center;padding:0 10px;margin-top:15px;box-sizing: border-box;height:auto">\
+			  <dd><a href="' +  WEBPATH  + '/' + 'myindex.html" style="color: black;background-color: #fff!important;border-bottom:1px solid #dedede;display:block;height:50px;line-height:50px;">账户中心</a></dd>\
+			   <dd></dd>\
+			  <dd><a href="javascript:void(0)" onclick="outlogin()"  style="color: black;background-color: #fff!important;display:block;height:50px;line-height:50px;">退出登录</a></dd>\
+		    </dl></li>';
+	            }
+		}
+		a1 = '<li class="layui-nav-item ' + layuithisclass1 + '">\
+						<a href="' +  WEBPATH  + '/' + 'index.html">首页</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass6 + '">\
+					<a href="' +  WEBPATH  + '/' + 'originCertificate.html">原产地证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass2 + '">\
+						<a href="' +  WEBPATH  + '/' + 'titleCertificate.html">商事证明书</a>\
+					<li class="layui-nav-item ' + layuithisclass12 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/freesale.html">自由销售证书</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass13 + '">\
+						<a href="' +  WEBPATH  + '/' + 'company/pinpaizms.html">商品品牌证书</a>\
+					</li>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass3 + '">\
+						<a href="' +  WEBPATH  + '/' + 'countryfilenew.html?tag=LSRZ">领事认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass20 + '">\
+						<a href="' +  WEBPATH  + '/' + 'attachmentCertIndex.html?tag=HYRZ">海牙认证</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass7 + '">\
+					<a href="' +  WEBPATH  + '/' + 'middleEastCertificate.html"  style="display:none;">中东自由销售证明书</a>\
+			    	</li>\
+					<li class="layui-nav-item ' + layuithisclass4 + '">\
+						<a href="' +  WEBPATH  + '/' + 'visacontrychoose.html" style="display:none;">签证服务</a>\
+					</li>\
+					<li class="layui-nav-item ' + layuithisclass8+' '+layuithisclass9+' '+layuithisclass10+' '+layuithisclass11+' '+layuithisclass14 + '">\
+					<a href="javascript:;">其他\
+					<dl class="layui-nav-child " style="width:100px">\
+						<dd><a href="' +  WEBPATH  + '/' + 'company/organization.html">受理机构</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' + 'company/commonproblem.html">常见问题</a></dd>\
+						<dd><a href="https://www.eatachina.com/" target="_blank">ATA</a></dd>\
+						<dd><a href="https://www.trustrader.cn/" target="_blank">信用认证</a></dd>\
+						<dd><a href="' +  WEBPATH  + '/' + 'aboutUs.html">关于我们</a></dd>\
+					</dl>\
+				</li>'+ html;
+
+		var tips = "";
+		if(getCookie("enterpriseprovince") == null || getCookie("enterpriseprovince") == "null" || city == null || city == "null" || getCookie("enterpriseoname") == null || getCookie("enterpriseoname") == "null") {
+			tips = "";
+		} else {
+			/*tips = '<div style="width: 450px;height: 25px;position: absolute;top: 57px;left: 100px;text-align: left;display: flex;flex-direction: row;justify-content: flex-start;">\
+						<div style="display: flex;flex-direction: row;align-items: center;cursor:pointer;"onclick="toMyInfo1()">\
+							<span style="color: #535353;">' + getCookie("enterpriseprovince") + '</span>&ensp;\
+							<span style="color: #535353;">' + city + '</span>&ensp;\
+							<span style="color: #535353;">受理机构:&nbsp;</span><span style="color: #535353;">' + (getCookie("enterpriseoname").length >= 15 ? getCookie("enterpriseoname").substr(0, 15) + "..." : getCookie("enterpriseoname")) + '</span>&emsp;\
+						</div>\
+					</div>';*/
+		}
+
+		var headerhtml="";
+		 if(getCookie("logintype")=="user"){
+			 var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+					<div id="titleDiv">\
+			<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+		 }else if(getCookie("logintype")=="company"){
+			 var headerhtml = '<div style="height:92px;box-shadow: 0 2px 2px 0 #dedede;position: fixed;width: 100%;top: 0;left: 0;right: 0;z-index: 9999;background-color: #ffffff;">\
+					<div id="titleDiv">\
+			<div style="width: 100%;margin: 0 auto;height:100%;position:relative;padding:0 10px;box-sizing:border-box;">' + tips + '<img src="' +  WEBPATH  + '/' + 'img/zgmchssrzpt.png" style="margin-top: 20px; width: 350px;cursor: pointer;float: left;margin-left:20px" onclick="toIndex1()" />\
+				<ul class="layui-nav" lay-filter="">' + a1 + '</ul>\
+			</div>\
+			</div>\
+		</div>';
+		 }
+		
+	}
+
+	return headerhtml;
+}
+
+// function getFooter1() {
+// 	var foothtml = '<div style="width: 1200px;margin: 0 auto;">\
+// 				<div style="width: 700px;float: left;text-align: left;line-height: 25px;margin-top: 5px;">\
+// 					<div style="width: 200px;margin-top: 30px;padding-left: 20px;float: left;">\
+// 						<div style="margin-top: 5px;">\
+// 							<img src="img/cotel.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">010-82217090</span>\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<img src="img/chuanzhen.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">010-82217099</span>\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<img src="img/wz.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">rzzx@ccpit.org</span>\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<img src="img/xx.png" style="width: 15px;margin-top: -5px; " />&nbsp;&nbsp;&nbsp;<span style="color: #FFFFFF;">100035</span>\
+// 						</div>\
+// 					</div>\
+// 					<div style="width: 465px;margin-top: 30px;float: left;">\
+// 						<div style="margin-top: 5px;">\
+// 							<span style="color: #FFFFFF;">版权所有：中国贸促会商事认证中心&nbsp; 中贸促商事服务有限公司&nbsp;&nbsp;</span>\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<span style="color: #FFFFFF;">地址：北京市西城区桦皮厂胡同2号国际商会大厦3层</span>\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<span style=" color: #FFFFFF;">技术支持：</span>\
+// 							<a href="http://www.jhs-sys.com/" target="_blank " style="color: #000000; "><span style="color: #FFFFFF; ">江苏海隆华思计算机系统有限公司</span></a>&emsp;\
+// 						</div>\
+// 						<div style="margin-top: 5px;">\
+// 							<a href="http://beian.miit.gov.cn/publish/query/indexFirst.action" target="_blank" style="color: #FFFFFF;">京ICP备18003462号-2</a>&nbsp;&nbsp;\
+// 						    <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010202008111" target="_blank" style="color: #FFFFFF;"><img src="img/gaba.png" style="width: 15px;margin-top: -2px; " />京公安网备 11010202008111号</a>\
+// 							<a href="mianze/mianze.html" target="_blank" style="color:white">【免责声明】</a>\
+// 						</div>\
+// 					</div>\
+// 				</div>\
+// 				<div style="width: 200px;float: right;text-align: right;">\
+// 					<img src="img/gfapp.png" style="width: 130px;height: 130px;margin-top: 25px;" /><br />\
+// 				</div>\
+// 				<div style="width: 200px;float: right;text-align: right; ">\
+// 					<img src="img/gfwx.png" style="width: 130px;height: 130px;margin-top: 25px; " /><br />\
+// 				</div>\
+// 			</div>';
+
+// 	return foothtml;
+// }
+
+function outlogin() {
+	//localStorage.clear("token");
+	//localStorage.clear("fta_username");
+	layer.alert('确认退出登录？', function() {
+		addCookie("enterprisekey", "");
+		addCookie("selectUserGuid","");
+		//commonAjax(ajax_url + "website/logout?token="+token, null, "get", false, function(data) {
+		window.location.href =  WEBPATH  + '/' + 'index.html';
+		//})
+	})
+
+}
+
+function checkshopcar() {
+	var loginkey = getCookie("enterprisekey");
+	if(loginkey == "" || loginkey == undefined || loginkey == "undefined") {
+
+		window.location.href =  WEBPATH  + '/' + 'index.html';
+	} else {
+		window.location.href =  WEBPATH  + '/' + 'company/shoppingcar.html';
+	}
+}
+//切换个人账户
+function switchUser() {
+	layer.confirm('确认切换个人账户登录吗', {
+		icon: 3,
+		title: '请确认'
+	}, function(index) {
+		 localStorage.removeItem('selectUserGuid');
+		    addCookie("logintype","user");
+		    window.location.href =  WEBPATH +"/myCenter.html";
+		// 关闭提示框
+		layer.close(index);
+	});
+   
+}
+//切换个人账户
+function switchUserTwo() {
+    localStorage.removeItem('selectUserGuid');
+    addCookie("logintype","user");
+    window.location.href =  WEBPATH +"/myCenter.html";
+}
+//切换企业账户
+function switchEnterprise() {
+   // var asd = localStorage.getItem("enterpriseid");
+
+    layer.open({
+        type: 2,
+        title: "选择企业账户",
+        area: ["800px", "80%"],
+        fix: false, //不固定
+        skin: 'layui-layer-rim', //加上边框
+        content:   WEBPATH +"/common/chooseEnterprise.html?timestamp=" + new Date().getTime(),
+        btn : [ '取消' ],
+        yes : function(index, layero) { // 确认按钮回调函数
+            // var iframeWin = window[layero.find('iframe')[0]['name']];
+            // var phone=iframeWin.selectUser();
+            // if(phone==""){
+            //     layer_msg("请选择一个账户！");
+            // }else{
+            //     sendMsg(phone,data);
+            // }
+            layer.close(index);//需要手动关闭窗口
+        },
+        btn2 : function(index, layero) { // 取消按钮回调函数
+        }
+
+    });
+}
+
+function switchEnterpriseTwo() {
+    // var asd = localStorage.getItem("enterpriseid");
+    layer.open({
+        type: 2,
+        title: "选择企业账户",
+        area: ["800px", "80%"],
+        fix: false, //不固定
+        skin: 'layui-layer-rim', //加上边框
+        content:  WEBPATH + "/common/chooseEnterprise.html?timestamp=" + new Date().getTime() ,
+        btn : [ '取消' ],
+        yes : function(index, layero) { // 确认按钮回调函数
+            // var iframeWin = window[layero.find('iframe')[0]['name']];
+            // var phone=iframeWin.selectUser();
+            // if(phone==""){
+            //     layer_msg("请选择一个账户！");
+            // }else{
+            //     sendMsg(phone,data);
+            // }
+            layer.close(index);//需要手动关闭窗口
+        },
+        btn2 : function(index, layero) { // 取消按钮回调函数
+        }
+
+    });
+}
+
+
+
+
+function uuidf(len, radix) {
+		var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+		var uuid = [],
+			i;
+		radix = radix || chars.length;
+
+		if (len) {
+			// Compact form
+			for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random() * radix];
+		} else {
+			// rfc4122, version 4 form
+			var r;
+
+			// rfc4122 requires these characters
+			uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+			uuid[14] = '4';
+
+			// Fill in random data.  At i==19 set the high bits of clock sequence as
+			// per rfc4122, sec. 4.1.5
+			for (i = 0; i < 36; i++) {
+				if (!uuid[i]) {
+					r = 0 | Math.random() * 16;
+					uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+				}
+			}
+		}
+
+		return uuid.join('');
+	}
+
+var estate="";
+var _uaguidcommonjs="";
+var _ualevelcommonjs="";
+function getuserlevel(){
+	// 查询是否开启产地证申请
+	var url = COMMONPATH+"/pc/home/new/userlevel";
+	var formData = new FormData();
+	formData.append("admintype", "userpc");
+	formData.append("adminid", getCookie("enterpriseid"));
+	formData.append("adminkey", getCookie("enterprisekey"));
+
+	commonAjaxSubmit(url, formData, "post", false, function(data) {
+		if(data.contextTwo == "1"||data.contextThree=="1"){
+			//$("#ymanage").show();
+			$("#toenterprise").hide();
+			estate=data.body[0].state;
+			_uaguidcommonjs=data.body[0].ua_guid;
+			_ualevelcommonjs=data.body[0].ua_level;
+		}else{
+			//$("#ymanage").hide();
+			$("#toenterprise").show();
+		}
+	});
+}
+
+function chooseorg(obj){
+	layer.open({
+		type: 2,
+		title: "贸促会选择",
+		area: ["1258px", "90%"],
+		fix: false, //不固定
+		skin: 'layui-layer-rim', //加上边框
+		content:  "../common/organization.html?timestamp=" + new Date().getTime()/*,
+		btn : [ '确认', '取消' ],
+		yes : function(index, layero) { // 确认按钮回调函数
+			var iframeWin = window[layero.find('iframe')[0]['name']];
+			iframeWin.selectorg();
+			layer.close(index);//需要手动关闭窗口
+		},
+		btn2 : function(index, layero) { // 取消按钮回调函数
+		}*/
+
+	});
+	/*pageOpen("贸促会选择", "../common/chooseorg.html", "0", "600px", "300px");*/
+}
+/**
+ *  返回元素在数组中的下标
+ *  @param {string} str 查询的元素（必传）
+ *  @param {array} arr 数组（必传）
+ *  @param {string} key 键值（当数组每项为对象时必传）
+ */
+function searchArrIndex(str, arr, key) {
+	for (var i = 0; i < arr.length; i++) {
+		if (!!key) {
+			if (arr[i][key] == str) {
+				return i;
+			}
+		} else {
+			if (arr[i] == str) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+var notshowarr=new Array('代办处理中','【外交部】已退回','文件核算，数据不一致','财务已核销','【中国贸促会总会】证明书处已编辑','【中国贸促会】证明书处已编辑','】提交外交部');
+function ifshownode(fpnode){
+	var ret=true;
+	for(var i=0;i<notshowarr.length;i++){
+		if(fpnode.indexOf(notshowarr[i])>-1){
+			ret=false;
+			return false;
+		}
+	}
+	return ret;
+}
+
+function toMyInfo() {
+	if(getCookie("logintype")=="user"){
+		window.location.href =  WEBPATH +"/myCenter.html?type=myInfo";
+	}else{
+		window.location.href =  WEBPATH +"/myindex.html?type=myInfo";
+	}
+}
+
+function toMyInfo1() {
+	if(getCookie("logintype")=="user"){
+		window.location.href =  WEBPATH +"/myCenter.html?type=myInfo";
+	}else{
+		window.location.href =  WEBPATH +"/myindex.html?type=myInfo";
+	}
+	
+}
+
+
+var pwdstr1=['a','b','c','d','e','f','g','h','i','j','k','k','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+var pwdstr2=['A','B','C','D','E','F','G','H','I','J','K','K','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+var pwdstr3=['2','3','2','3','4','5','6','7','8','9'];
+var pwdstr4=['!','@','#','*'];
+
+function genaratePwd(){
+	var result="";
+	var rand=parseInt(Math.random()*25);
+		result+=pwdstr2[rand];
+	rand=parseInt(Math.random()*25);
+		result+=pwdstr1[rand];
+		rand=parseInt(Math.random()*9);
+		result+=pwdstr3[rand];
+		rand=parseInt(Math.random()*3);
+		result+=pwdstr4[rand];
+	for(var i=0;i<4;i++){
+		var rand2=parseInt(Math.random()*5);
+		if(rand2==1||rand2==0){
+			rand=parseInt(Math.random()*25);
+			result+=pwdstr1[rand];
+		}else if(rand2==2){
+			rand=parseInt(Math.random()*25);
+			result+=pwdstr2[rand];
+		}else if(rand2==3){
+			rand=parseInt(Math.random()*9);
+			result+=pwdstr3[rand];
+		}else if(rand2==4){
+			rand=parseInt(Math.random()*3);
+			result+=pwdstr4[rand];
+		}else{
+			console.log(rand2);
+		}
+	}
+	
+	return result;
+}
+
+function pwdyz(pwdstr){
+	
+	var reg1=/([0-9])/;
+	var reg2=/([A-Z])/;
+	var reg3=/([a-z])/;
+	var reg4=/([!#@*])/;
+	if(reg1.test(pwdstr)&&reg2.test(pwdstr)&&reg3.test(pwdstr)&&reg4.test(pwdstr)){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+
+pageView()
+function pageView(){
+	var headers = { //请求头
+	    Accept: "application/json; charset=utf-8"
+	};
+	var salt = Math.random().toString(36).substr(2);
+	headers.salt = salt;
+	var signStr = "salt=" + salt + "&signSalt=ccpit_system_api_common";
+	var checkSgin = md5(signStr + formatddMMyyyy(new Date()))
+	headers.sign = checkSgin;
+	
+	var param = {
+		pageUrl: location.href,
+		pageName: '',
+		pageSource: '1'
+	}
+	var baseUrl = "https://www.rzccpit.com/";
+	if(top.window.location.href.indexOf("rzccpit")==-1){
+		baseUrl = "http://172.24.7.20:8098/";
+	}
+	$.ajax({
+		url: baseUrl + 'manageUpgradeApi/common/pageViewLog',
+		headers: headers,
+		type: "post",
+		dataType: "json",
+		data: JSON.stringify(param),
+		async: false,
+		cache: false,
+		contentType: 'application/json;charset=UTF-8',
+	});
+}
+
+function formatddMMyyyy(date) {
+    const year = date.getFullYear().toString().padStart(4, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
+    return day + month + year;
+}

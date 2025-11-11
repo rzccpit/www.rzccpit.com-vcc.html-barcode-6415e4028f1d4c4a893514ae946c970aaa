@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<!-- saved from url=(0073)https://www.rzccpit.com/vcc.html?barcode=6415e4028f1d4c4a893514ae946c970a -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="renderer" content="webkit">
+		<!-- 360极速模式 -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+		<title>国际商事证明书防伪验证中心</title>
+		<link rel="shortcut icon" href="https://www.rzccpit.com/favicon.ico">
+		<script src="./index_files/jquery.min.js.download"></script>
+		<script src="./index_files/common.js.download" type="text/javascript"></script>
+		<script src="./index_files/layui.js.download" type="text/javascript" charset="utf-8"></script>
+		<link href="./index_files/layui.css" type="text/css" rel="stylesheet">
+		<link href="./index_files/css.css" rel="stylesheet">
+		<link rel="shortcut icon" href="https://www.rzccpit.com/favicon.ico">
+		<link href="./index_files/mui.min.css" rel="stylesheet">
+		<script src="./index_files/mui.min.js.download" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css">
+		body {
+				margin-top: 0;
+			}
+			
+			html,
+			body,
+			.backgroound_quanju {
+				background-color: #F5F5F5;
+			}
+			
+			html {
+				height: 100%;
+			}
+			
+			.tableDiv {
+				width: 100%;
+				min-height: 100%;
+				min-width: 100%;
+			}
+			
+			div table tr {
+				height: 50px;
+			}
+			
+			div table tr td {
+				font-size: 16px;
+			}
+			
+			.kuand span {
+				color: #fff;
+				line-height: 44px;
+				width: auto;
+				margin-left: 1%;
+			}
+			
+			.break {
+				word-break: break-all;
+			}
+		}
+		.mui-content-logo {
+				text-align: center;
+				padding-bottom: 0;
+			}
+			
+			.mui-content-logo img {
+				width: 34%;
+			}
+			
+			.mui-btn {
+				padding: 5px;
+			}
+			
+			input::-webkit-input-placeholder {
+				color: #949494;
+			}
+			
+			.mui-input-row .mui-input-clear~.mui-icon-clear {
+				top: 15px;
+				color: white;
+			}
+		</style>
+
+	<link id="layuicss-layer" rel="stylesheet" href="./index_files/layer.css" media="all"></head>
+
+	<body style="position: relative;height: 100%;">
+		<div class="backgroound_quanju">
+			<div class="hrdengd" style="min-width: auto;">
+				<div class="kuand clear" style="width: 100%;padding-bottom: 10px;text-align: left;">
+					<span class="fl" align="right" style="font-size: 14px;">
+		欢迎进入国际商事证明书防伪验证中心</span>
+
+				</div>
+			</div>
+			<div class="background_warry" style="min-width: auto;" id="detaildiv">
+				<div style="margin-top: -75px;">
+					<!--title-->
+					<div style="text-align: center;">
+						<img id="imgid" src="./index_files/query.png" width="80%">
+					</div>
+					<div id="content" style="display: none;">
+
+						<div style="font-size: 12px;color: red;width: 80%;margin: 0 auto;margin-top: 60px;">证书编号(CERTIFICATE NO):</div>
+
+						<div class="mui-input-row mui-search" style="text-align: center;width: 80%;margin:0 auto;margin-top: 20px;">
+							<input type="text" id="no" placeholder="请输入15位证书号(Please Enter A 15 Digit Certificate No.)" maxlength="17" style="font-size:12px !important;box-sizing:border-box;height:34px;border:0px solid black;border-radius:6px;background-color:#E4E4E4">
+						</div>
+
+
+						<div class="mui-button-row" style="margin-top: 20px;">
+							<button type="button" class="mui-btn mui-btn-primary mui-btn-outlined mui-icon mui-icon mui-icon mui-icon-search" onclick="getData();" style="margin-right: 20px;">点击查询</button>
+						</div>
+
+					</div>
+					<div id="tableDiv" style="">
+						<table class="layui-table" style="text-align: left;">
+							<thead>
+								</thead><colgroup>
+									<col style="width: 16%;">
+									<col style="width: 84%;">
+								</colgroup>
+							
+							<tbody>
+								<tr>
+									<td>证书编号<br>CERTIFICATE NUMBER</td>
+									<td id="no_certificate" class="break">254403A0/H04411</td>
+								</tr>
+
+								<tr style="display: none;">
+									<td>申办方名称<br>COMPANY</td>
+									<td id="companyName" class="break">深圳市赛喏杰贸易有限公司<br>SHENZHEN SAINUOJIE TRADING CO., LTD</td>
+								</tr>
+
+								<tr>
+									<td>文件所属方名称<br>COMPANY</td>
+									<td id="companyName_use" class="break">深圳市乐创享科技有限公司<br>SHENZHEN LE MEDICAL TECHNOLOGY CO.,LTD</td>
+								</tr>
+
+								<tr>
+									<td>证词<br>TESTIMONY</td>
+									<td id="cn_prove" class="break">兹证明：在所附授权书上的深圳市乐创享科技有限公司的印章属实。<br>THIS IS TO CERTIFY THAT : the seal of SHENZHEN LE MEDICAL TECHNOLOGY CO.,LTD on the annexed LETTER OF AUTHORIZATION is genuine.</td>
+								</tr>
+
+								<tr>
+									<td>颁发人<br>ISSUER</td>
+									<td id="e_name" class="break">胡娜<br>Hu Na</td>
+								</tr>
+
+								<tr>
+									<td>颁发时间<br>ISSUING TIME</td>
+									<td id="cn_date" class="break">2025年09月06日<br>Sep.06,2025</td>
+								</tr>
+								<tr>
+									<td>颁发机构<br>ISSUING AGENCY</td>
+									<td id="o_name" class="break">深圳市贸促会</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+				</div>
+			</div>
+
+		</div>
+
+	
+
+	<script type="text/javascript">
+		var barcode = GetQueryString("barcode") || 0;
+		var no_certificate;
+		var companyName;
+		var companyName_use;
+		var cn_prove;
+		var e_name;
+		var cn_date;
+		
+
+		layui.use(['layer'], function() {
+			layer = layui.layer;
+
+			/* if(barcode != "0") {
+				getData();
+			} */
+
+		});
+
+		function getData() {
+		var	no = $("#no").val().toString().trim().toUpperCase();
+			if(no == "") {
+				mui.toast("请输入证书编号！");
+				return false;
+			}
+			var url = "common/certificate/detail";
+			var formData = new FormData();
+			if(barcode != "0") {
+				formData.append("barcode", barcode);
+			}
+			formData.append("cer_no", no);
+			commonAjax(url, formData, "post", true, function(data) {
+				if(data.body.length > 0) {
+					$("#content").hide();
+					//证书编码
+					$("#no_certificate").html(data.body[0].certificate_no);
+					//申办方名称
+					$("#companyName").html(data.body[0].companyName + '<br>' + data.body[0].companyName_en);
+					//文件所属方名称
+					$("#companyName_use").html(data.body[0].companyName_use + '<br>' + data.body[0].companyName_use_en);
+
+					//英文证明
+					if(data.body[0].testimony_la == "中文-英文") {
+						//中文证明
+						$("#cn_prove").html("兹证明：" + data.body[0].proveChinese + '<br>' + "THIS IS TO CERTIFY THAT : " + data.body[0].proveEnglish);
+					} else {
+						//中文证明
+						$("#cn_prove").html("兹证明：" + data.body[0].proveChinese + '<br>' + data.body[0].proveEnglish);
+					}
+					//核签人拼音
+					$("#e_name").html(data.body[0].oa_name + '<br>' + data.body[0].oa_name_e);
+					//核签日期 中文
+					$("#cn_date").html(data.body[0].check_time.split("-")[0] + "年" + data.body[0].check_time.split("-")[1] + "月" + data.body[0].check_time.split("-")[2] + "日" + '<br>' + monthToEng(data.body[0].check_time.split("-")[1]) + "." + data.body[0].check_time.split("-")[2] + "," + data.body[0].check_time.split("-")[0]);
+					//颁发机构
+					$("#o_name").html(data.body[0].o_name);
+					$("#tableDiv").show();
+				}else{
+					mui.toast("未查询到数据，请确认！");
+					return false;
+				}
+
+			});
+		}
+	</script>
+
+</body></html>
